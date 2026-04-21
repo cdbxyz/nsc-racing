@@ -1,0 +1,249 @@
+export const dynamic = "force-dynamic";
+
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { createServiceClient } from "@/lib/supabase/service";
+import { isUnlocked } from "@/lib/auth/gate";
+import {
+  CopyLinkButton,
+  TrophySection,
+  type RaceTrophy,
+  type FinishedEntry,
+  type ExistingAward,
+} from "./client";
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+function msToTime(ms: number): string {
+  const totalSecs = Math.floor(ms / 1000);
+  const h = Math.floor(totalSecs / 3600);
+  const m = Math.floor((totalSecs % 3600) / 60);
+  const s = totalSecs % 60;
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+const NON_RACING_STATUSES = ["DNF", "DNS", "DSQ", "RET", "OCS", "DNC"] as const;
+
+export default async function ResultsPage({ params }: PageProps) {
+  const { id: raceId } = await params;
+  const supabase = createServiceClient();
+
+  const { data: race } = await supabase
+    .from("races")
+    .select(
+      `id, name, day_offset, start_time, status,
+       seasons(year, start_date),
+       race_trophies(display_order, trophy_id, trophies(name, accumulator_group)),
+       race_entries(
+         id, racer_id, status, corrected_ms, normalised_elapsed_ms,
+         elapsed_ms, position_overall, position_class,
+         base_py_snapshot, effective_py_snapshot, laps_to_sail,
+         racers(display_name, full_name),
+         boats(sail_number, boat_classes(name))
+       ),
+       trophy_awards(id, trophy_id, racer_id, racers(display_name, full_name))`
+    )
+    .eq("id", raceId)
+    .single();
+
+  if (!race) notFound();
+
+  const season = race.seasons as { year: number; start_date: string } | null;
+
+  function formatRaceDate() {
+    if (!season?.start_date) return "";
+    const d = new Date(season.start_date + "T00:00:00Z");
+    d.setUTCDate(d.getUTCDate() + race!.day_offset);
+    return d.toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
+  }
+
+  type RawEntry = {
+    id: string;
+    racer_id: string;
+    status: string;
+    corrected_ms: number | null;
+    normalised_elapsed_ms: number | null;
+    elapsed_ms: number | null;
+    position_overall: number | null;
+    position_class: number | null;
+    base_py_snapshot: number | null;
+    effective_py_snapshot: number | null;
+    laps_to_sail: number | null;
+    racers: { display_name: string; full_name: string } | null;
+    boats: { sail_number: string; boat_classes: { name: string } | null } | null;
+  };
+
+  const rawEntries = (race.race_entries ?? []) as RawEntry[];
+
+  const finishedEntries = rawEntries
+    .filter((e) => e.status === "FIN" && e.position_overall != null)
+    .sort((a, b) => (a.position_overall ?? 0) - (b.position_overall ?? 0));
+
+  const nonFinishers = rawEntries.filter((e) =>
+    (NON_RACING_STATUSES as readonly string[]).includes(e.status)
+  );
+
+  const winner = finishedEntries[0];
+  const winnerCorrected = winner?.corrected_ms ?? null;
+
+  // Trophies — exclude accumulator trophies from the award flow
+  type RawRaceTrophy = {
+    display_order: number;
+    trophy_id: string;
+    trophies: { name: string; accumulator_group: string | null } | null;
+  };
+  const raceTrophies: RaceTrophy[] = ([...(race.race_trophies ?? [])] as RawRaceTrophy[])
+    .filter((rt) => rt.trophies?.accumulator_group == null)
+    .sort((a, b) => a.display_order - b.display_order)
+    .map((rt) => ({ trophyId: rt.trophy_id, name: rt.trophies?.name ?? "?" }));
+
+  type RawAward = {
+    id: string;
+    trophy_id: string;
+    racer_id: string;
+    racers: { display_name: string; full_name: string } | null;
+  };
+  const initialAwards: ExistingAward[] = (race.trophy_awards as RawAward[]).map(
+    (a) => ({
+      awardId: a.id,
+      trophyId: a.trophy_id,
+      racerId: a.racer_id,
+      racerName: a.racers?.display_name ?? a.racers?.full_name ?? "?",
+    })
+  );
+
+  const finishedForClient: FinishedEntry[] = finishedEntries.map((e) => ({
+    entryId: e.id,
+    racerId: e.racer_id,
+    racerName: e.racers?.display_name ?? e.racers?.full_name ?? "?",
+    positionOverall: e.position_overall!,
+  }));
+
+  const officerMode = await isUnlocked();
+
+  return (
+    <main className="min-h-screen bg-neutral-50 pb-16">
+      <header className="bg-white border-b border-neutral-200 px-4 py-3 flex items-center justify-between no-print">
+        <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-800">
+          ← Home
+        </Link>
+        <CopyLinkButton />
+      </header>
+
+      <div className="max-w-3xl mx-auto px-4 pt-6">
+        {/* Race header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-neutral-900">{race.name}</h1>
+          <p className="text-sm text-neutral-500 mt-0.5">
+            {formatRaceDate()} · {race.start_time.slice(0, 5)}
+            {season && ` · ${season.year} Season`}
+          </p>
+          {race.status !== "finished" && (
+            <span className="mt-2 inline-block rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-xs text-amber-700">
+              Race in progress — provisional results
+            </span>
+          )}
+        </div>
+
+        {/* Results table */}
+        {finishedEntries.length === 0 ? (
+          <p className="text-neutral-500 text-sm">No finishers recorded yet.</p>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-neutral-100 text-xs text-neutral-400 uppercase tracking-wider">
+                  <th className="py-2 px-3 text-left font-medium">Pos</th>
+                  <th className="py-2 px-3 text-left font-medium">Racer</th>
+                  <th className="py-2 px-3 text-left font-medium hidden sm:table-cell">Sail</th>
+                  <th className="py-2 px-3 text-left font-medium hidden sm:table-cell">Class</th>
+                  <th className="py-2 px-3 text-right font-medium hidden md:table-cell">Elapsed</th>
+                  <th className="py-2 px-3 text-right font-medium">Corrected</th>
+                  <th className="py-2 px-3 text-right font-medium hidden md:table-cell">Gap</th>
+                </tr>
+              </thead>
+              <tbody>
+                {finishedEntries.map((e) => {
+                  const gap =
+                    winnerCorrected != null && e.corrected_ms != null
+                      ? e.corrected_ms - winnerCorrected
+                      : null;
+                  const name = e.racers?.display_name ?? e.racers?.full_name ?? "?";
+                  const sail = e.boats?.sail_number ?? "?";
+                  const cls = e.boats?.boat_classes?.name ?? "?";
+
+                  return (
+                    <tr key={e.id} className="border-b border-neutral-50 last:border-0">
+                      <td className="py-2.5 px-3 font-bold text-neutral-700 w-10">
+                        {e.position_overall}
+                      </td>
+                      <td className="py-2.5 px-3 text-neutral-900 font-medium">
+                        {name}
+                      </td>
+                      <td className="py-2.5 px-3 text-neutral-500 hidden sm:table-cell">
+                        {sail}
+                      </td>
+                      <td className="py-2.5 px-3 text-neutral-500 hidden sm:table-cell">
+                        {cls}
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-neutral-500 hidden md:table-cell tabular-nums">
+                        {e.elapsed_ms != null ? msToTime(e.elapsed_ms) : "—"}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-semibold text-neutral-800 tabular-nums">
+                        {e.corrected_ms != null ? msToTime(e.corrected_ms) : "—"}
+                      </td>
+                      <td className="py-2.5 px-3 text-right text-neutral-400 hidden md:table-cell tabular-nums">
+                        {gap != null && gap > 0 ? `+${msToTime(gap)}` : gap === 0 ? "—" : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Non-finishers */}
+        {nonFinishers.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">
+              Non-finishers
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {nonFinishers.map((e) => {
+                const name = e.racers?.display_name ?? e.racers?.full_name ?? "?";
+                return (
+                  <span
+                    key={e.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-white border border-neutral-200 px-2.5 py-1 text-xs text-neutral-600"
+                  >
+                    {name}
+                    <span className="font-medium text-neutral-400">{e.status}</span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Trophy section — officer only */}
+        {officerMode && (
+          <TrophySection
+            raceId={raceId}
+            trophies={raceTrophies}
+            finishedEntries={finishedForClient}
+            initialAwards={initialAwards}
+          />
+        )}
+      </div>
+    </main>
+  );
+}

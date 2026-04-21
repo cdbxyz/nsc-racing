@@ -158,7 +158,7 @@ export type Database = {
           racer_id: string
           reason: string | null
           season_id: string
-          trophy_award_id: string
+          trophy_award_id: string | null
         }
         Insert: {
           created_at?: string
@@ -169,7 +169,7 @@ export type Database = {
           racer_id: string
           reason?: string | null
           season_id: string
-          trophy_award_id: string
+          trophy_award_id?: string | null
         }
         Update: {
           created_at?: string
@@ -180,7 +180,7 @@ export type Database = {
           racer_id?: string
           reason?: string | null
           season_id?: string
-          trophy_award_id?: string
+          trophy_award_id?: string | null
         }
         Relationships: [
           {
@@ -564,7 +564,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_trophy_award: {
+        Args: { p_race_id: string; p_racer_id: string; p_trophy_id: string }
+        Returns: string
+      }
       create_season_from_template: { Args: { p_year: number }; Returns: string }
+      undo_trophy_award: { Args: { p_award_id: string }; Returns: undefined }
     }
     Enums: {
       entry_status:

@@ -133,3 +133,10 @@
   from { stroke-dashoffset: 0; }
   to   { stroke-dashoffset: 251.2; }
 }
+
+@media print {
+  header, nav, .no-print { display: none !important; }
+  body { background: white; }
+  table { border-collapse: collapse; }
+  td, th { border: 1px solid #e5e7eb; }
+}

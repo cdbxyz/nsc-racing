@@ -81,6 +81,11 @@ export function RaceRow({ race, raceDate, trophies, allTrophies, locked }: Props
                 Control
               </Button>
             </Link>
+            <Link href={`/race/${race.id}/results`}>
+              <Button size="sm" variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">
+                Results
+              </Button>
+            </Link>
             <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
               {locked ? "View" : "Edit"}
             </Button>
