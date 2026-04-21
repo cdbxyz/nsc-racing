@@ -37,14 +37,14 @@ export async function SiteHeader() {
 
   return (
     <header
-      className="sticky top-0 z-10 border-b border-neutral-200 bg-white"
+      className="sticky top-0 z-10 border-b border-navy-100 bg-navy-50"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
         {/* Logo + wordmark */}
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
           <Logo size="sm" priority />
-          <span className="hidden md:block text-sm font-semibold text-neutral-900 hover:text-neutral-600 transition-colors truncate">
+          <span className="hidden md:block text-sm font-semibold text-navy-900 hover:text-navy-700 transition-colors truncate">
             Nefyn Sailing Club
           </span>
         </Link>
@@ -53,7 +53,7 @@ export async function SiteHeader() {
         <nav className="flex items-center gap-4">
           <Link
             href="/trophies"
-            className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
+            className="text-sm text-navy-700/70 transition-colors hover:text-navy-900"
           >
             Trophies
           </Link>
@@ -63,7 +63,7 @@ export async function SiteHeader() {
           ) : (
             <Link
               href="/unlock"
-              className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-500 hover:border-neutral-400 hover:text-neutral-700 transition-colors"
+              className="rounded-full border border-navy-200 px-3 py-1 text-xs font-medium text-navy-700/70 hover:border-navy-300 hover:text-navy-800 transition-colors"
             >
               Unlock
             </Link>

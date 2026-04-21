@@ -95,18 +95,24 @@ export default async function TrophiesPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12">
-      <header className="mb-8">
-        <Link href="/" className="text-sm text-neutral-400 hover:text-neutral-700">
-          ← Home
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-neutral-900">
-          Trophy Cabinet
-        </h1>
-        <p className="text-neutral-500 text-sm mt-1">
-          {trophies.length} trophies in the registry
-        </p>
-      </header>
+    <main className="min-h-screen flex flex-col">
+      {/* ── Hero ── */}
+      <div className="bg-navy-50 border-b border-navy-100">
+        <div className="mx-auto max-w-3xl px-4 pt-8 pb-7">
+          <Link href="/" className="text-sm text-navy-700/60 hover:text-navy-800">
+            ← Home
+          </Link>
+          <h1 className="mt-2 text-2xl font-bold text-navy-900">
+            Trophy Cabinet
+          </h1>
+          <p className="text-navy-700/70 text-sm mt-1">
+            {trophies.length} trophies in the registry
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-neutral-50 flex-1">
+      <div className="mx-auto max-w-3xl px-4 py-10">
 
       {[...grouped.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([letter, group]) => (
         <section key={letter} className="mb-8">
@@ -220,6 +226,8 @@ export default async function TrophiesPage() {
           </div>
         </section>
       ))}
+      </div>
+      </div>
     </main>
   );
 }

@@ -138,18 +138,23 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <section className="mx-auto max-w-4xl w-full px-4 pt-10 pb-4">
-        <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 tracking-tight">
-          Nefyn Sailing Club
-        </h1>
-        <p className="mt-1 text-neutral-500">
-          {season
-            ? `${season.year} Fortnight · ${formatDate(new Date(season.start_date + "T00:00:00Z"))} – ${formatDate(new Date(season.end_date + "T00:00:00Z"))}`
-            : "15-day fortnight race programme"}
-        </p>
-      </section>
+      {/* ── Hero ── */}
+      <div className="bg-navy-50 border-b border-navy-100">
+        <div className="mx-auto max-w-4xl w-full px-4 pt-10 pb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-navy-900 tracking-tight">
+            Nefyn Sailing Club
+          </h1>
+          <p className="mt-1 text-navy-700/70">
+            {season
+              ? `${season.year} Fortnight · ${formatDate(new Date(season.start_date + "T00:00:00Z"))} – ${formatDate(new Date(season.end_date + "T00:00:00Z"))}`
+              : "15-day fortnight race programme"}
+          </p>
+        </div>
+      </div>
 
-      <section className="mx-auto max-w-4xl w-full px-4 pb-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* ── Cards ── */}
+      <div className="bg-white border-b border-neutral-100">
+      <section className="mx-auto max-w-4xl w-full px-4 py-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {/* ── Next Race ── */}
         <div className="rounded-xl border border-neutral-200 bg-white p-6 flex flex-col gap-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
@@ -301,14 +306,16 @@ export default async function Home() {
           </Link>
         </div>
       </section>
+      </div>
 
       {/* ── Upcoming schedule ── */}
       {season && racesWithDates.length > 0 && (
-        <section className="mx-auto max-w-4xl w-full px-4 pb-16">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-3">
+        <div className="bg-sea-50 border-b border-sea-100 flex-1">
+        <section className="mx-auto max-w-4xl w-full px-4 py-10">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-sea-700 mb-3">
             Race Schedule · {season.year}
           </h2>
-          <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
+          <div className="rounded-xl border border-sea-100 bg-white overflow-hidden">
             <table className="w-full text-sm">
               <tbody>
                 {racesWithDates.map((r) => {
@@ -353,6 +360,7 @@ export default async function Home() {
             </table>
           </div>
         </section>
+        </div>
       )}
     </main>
   );

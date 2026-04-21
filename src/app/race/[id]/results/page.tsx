@@ -148,8 +148,8 @@ export default async function ResultsPage({ params }: PageProps) {
         </div>
       </div>
 
-      <header className="bg-white border-b border-neutral-200 px-4 py-3 flex items-center justify-between no-print">
-        <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-800">
+      <header className="bg-navy-50 border-b border-navy-100 px-4 py-3 flex items-center justify-between no-print">
+        <Link href="/" className="text-sm text-navy-700/60 hover:text-navy-800">
           ← Home
         </Link>
         <CopyLinkButton />
