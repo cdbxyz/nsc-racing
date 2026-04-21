@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -49,13 +49,18 @@
 }
 
 :root {
+  /* Font variables from next/font – resolved against the classes on <html> */
+  --font-geist-sans: var(--font-geist-sans);
+  --font-geist-mono: var(--font-geist-mono);
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  /* NSC brand navy #0a1b3d */
+  --primary: oklch(0.13 0.065 262);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -122,16 +127,54 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    /* Safe area insets for iPhone notch / home indicator */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
   html {
     @apply font-sans;
+  }
+  /* Prevent iOS Safari auto-zoom on input focus */
+  input, select, textarea {
+    font-size: max(16px, 1rem);
   }
 }
 /* Race control: debounce ring drains over 1.5 s after a successful LAP tap */
 @keyframes nsc-debounce-drain {
   from { stroke-dashoffset: 0; }
   to   { stroke-dashoffset: 251.2; }
+}
+
+/* Race control: prevent pull-to-refresh bounce while racing */
+.race-running {
+  overscroll-behavior: contain;
+}
+
+/* Admin tables: horizontal-scroll on mobile as a safe fallback */
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile-card treatment for simple admin tables via CSS only */
+@media (max-width: 639px) {
+  .card-table thead { display: none; }
+  .card-table tbody { display: block; }
+  .card-table tr {
+    display: block;
+    border: 1px solid oklch(0.922 0 0);
+    border-radius: 0.625rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    background: white;
+  }
+  .card-table td {
+    display: block;
+    padding: 0.2rem 0;
+    border: none;
+    text-align: left !important;
+  }
 }
 
 @media print {

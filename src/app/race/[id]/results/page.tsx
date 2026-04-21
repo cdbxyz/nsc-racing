@@ -174,7 +174,57 @@ export default async function ResultsPage({ params }: PageProps) {
         {finishedEntries.length === 0 ? (
           <p className="text-neutral-500 text-sm">No finishers recorded yet.</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
+          <>
+          {/* ── Mobile card stack (< sm) ── */}
+          <div className="sm:hidden flex flex-col gap-2 mb-6">
+            {finishedEntries.map((e) => {
+              const gap =
+                winnerCorrected != null && e.corrected_ms != null
+                  ? e.corrected_ms - winnerCorrected
+                  : null;
+              const name = e.racers?.display_name ?? e.racers?.full_name ?? "?";
+              const sail = e.boats?.sail_number ?? "?";
+              const cls = e.boats?.boat_classes?.name ?? "?";
+              return (
+                <details key={e.id} className="rounded-lg border border-neutral-200 bg-white">
+                  <summary className="flex items-center gap-3 px-4 py-3 cursor-pointer list-none">
+                    <span className="text-lg font-bold text-neutral-400 w-8 shrink-0 tabular-nums">
+                      {e.position_overall}
+                    </span>
+                    <span className="flex-1 font-semibold text-neutral-900 truncate">{name}</span>
+                    <span className="font-mono tabular-nums text-neutral-700 shrink-0 text-sm">
+                      {e.corrected_ms != null ? msToTime(e.corrected_ms) : "—"}
+                    </span>
+                  </summary>
+                  <div className="px-4 pb-3 pt-1 border-t border-neutral-100 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <span className="text-neutral-400">Sail</span>
+                    <span className="text-neutral-700">{sail}</span>
+                    <span className="text-neutral-400">Class</span>
+                    <span className="text-neutral-700">{cls}</span>
+                    <span className="text-neutral-400">Elapsed</span>
+                    <span className="font-mono tabular-nums text-neutral-700">
+                      {e.elapsed_ms != null ? msToTime(e.elapsed_ms) : "—"}
+                    </span>
+                    <span className="text-neutral-400">Normalised</span>
+                    <span className="font-mono tabular-nums text-neutral-700">
+                      {e.normalised_elapsed_ms != null ? msToTime(e.normalised_elapsed_ms) : "—"}
+                    </span>
+                    <span className="text-neutral-400">Class pos</span>
+                    <span className="text-neutral-700">{e.position_class ?? "—"}</span>
+                    {gap != null && gap > 0 && (
+                      <>
+                        <span className="text-neutral-400">Gap to 1st</span>
+                        <span className="font-mono tabular-nums text-neutral-500">+{msToTime(gap)}</span>
+                      </>
+                    )}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
+
+          {/* ── Desktop table (≥ sm) ── */}
+          <div className="hidden sm:block overflow-x-auto rounded-lg border border-neutral-200 bg-white">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-100 text-xs text-neutral-400 uppercase tracking-wider">
@@ -211,14 +261,14 @@ export default async function ResultsPage({ params }: PageProps) {
                       <td className="py-2.5 px-3 text-neutral-500 hidden sm:table-cell">
                         {cls}
                       </td>
-                      <td className="py-2.5 px-3 text-right text-neutral-500 hidden md:table-cell tabular-nums">
+                      <td className="py-2.5 px-3 text-right text-neutral-500 hidden md:table-cell font-mono tabular-nums">
                         {e.elapsed_ms != null ? msToTime(e.elapsed_ms) : "—"}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-semibold text-neutral-800 tabular-nums">
+                      <td className="py-2.5 px-3 text-right font-mono font-semibold text-neutral-800 tabular-nums">
                         {e.corrected_ms != null ? msToTime(e.corrected_ms) : "—"}
                       </td>
-                      <td className="py-2.5 px-3 text-right text-neutral-400 hidden md:table-cell tabular-nums">
-                        {gap != null && gap > 0 ? `+${msToTime(gap)}` : gap === 0 ? "—" : "—"}
+                      <td className="py-2.5 px-3 text-right text-neutral-400 hidden md:table-cell font-mono tabular-nums">
+                        {gap != null && gap > 0 ? `+${msToTime(gap)}` : "—"}
                       </td>
                     </tr>
                   );
@@ -226,6 +276,7 @@ export default async function ResultsPage({ params }: PageProps) {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* Non-finishers */}

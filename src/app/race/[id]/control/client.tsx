@@ -509,9 +509,17 @@ export function ControlClient({
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col min-h-screen bg-neutral-950 text-white">
+    <div
+      className={`fixed inset-0 z-50 flex flex-col bg-neutral-950 text-white overflow-auto select-none ${
+        state.raceStatus === "running" ? "race-running" : ""
+      }`}
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       {/* ── Sticky header ── */}
-      <header className="sticky top-0 z-20 bg-neutral-900 border-b border-neutral-800 px-4 py-3">
+      <header
+        className="sticky top-0 z-20 bg-neutral-900 border-b border-neutral-800 px-4 py-3"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+      >
         <div className="max-w-xl mx-auto flex items-center justify-between gap-3">
           {/* Race info */}
           <div className="flex-1 min-w-0">
@@ -534,7 +542,7 @@ export function ControlClient({
 
           {/* Clock */}
           {state.raceStatus === "running" && (
-            <div className="text-2xl font-mono font-bold text-white tabular-nums">
+            <div className="font-mono font-bold text-white tabular-nums text-2xl md:text-3xl">
               {formatClock(state.clockMs)}
             </div>
           )}
@@ -679,14 +687,20 @@ export function ControlClient({
         {state.raceStatus === "finished" && (
           <div className="rounded-xl bg-neutral-900 border border-neutral-800 p-6 text-center">
             <p className="text-2xl font-bold text-white mb-2">Race complete</p>
-            <p className="text-neutral-400 text-sm mb-6">
-              Results computation is queued (Phase 8).
+            <p className="text-neutral-400 text-sm mb-4">
+              Results have been computed.
             </p>
+            <Link
+              href={`/race/${raceId}/results`}
+              className="inline-block mb-6 rounded-xl bg-white px-6 py-3 font-bold text-neutral-900 hover:bg-neutral-100 transition-colors"
+            >
+              View results →
+            </Link>
             <div className="flex flex-col gap-2">
               {doneEntries.map((e) => (
                 <div key={e.id} className="flex items-center justify-between text-sm">
                   <span className="font-medium text-white">{e.racerName}</span>
-                  <span className={`font-mono ${e.status === "FIN" ? "text-green-400" : "text-neutral-400"}`}>
+                  <span className={`font-mono tabular-nums ${e.status === "FIN" ? "text-green-400" : "text-neutral-400"}`}>
                     {e.status === "FIN" && e.finishTimeMs !== null
                       ? formatElapsed(e.finishTimeMs)
                       : e.status}
@@ -763,7 +777,7 @@ function EntryCard({
       }`}
     >
       {/* ── Left: racer info ── */}
-      <div className="flex-1 flex flex-col justify-center px-4 py-4 min-w-0">
+      <div className="flex-1 flex flex-col justify-center px-4 py-4 min-w-0" style={{ minHeight: 88 }}>
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold text-white leading-tight truncate">
             {entry.racerName}
@@ -787,14 +801,14 @@ function EntryCard({
           >
             {STATUS_LABELS[entry.status] ?? entry.status}
             {entry.status === "FIN" && entry.finishTimeMs !== null && (
-              <span className="ml-1 font-mono font-normal">
+              <span className="ml-1 font-mono font-normal tabular-nums">
                 {formatElapsed(entry.finishTimeMs)}
               </span>
             )}
           </span>
         ) : (
           <div className="mt-1 flex items-center gap-3">
-            <span className="text-sm font-mono text-neutral-300">
+            <span className="text-sm font-mono tabular-nums text-neutral-300">
               {totalLaps} / {entry.lapsToSail}
             </span>
             {referenceLaps !== null && entry.lapsToSail < referenceLaps && (
@@ -803,7 +817,7 @@ function EntryCard({
               </span>
             )}
             {displayElapsedMs !== null && (
-              <span className="text-sm font-mono text-neutral-400">
+              <span className="text-sm font-mono tabular-nums text-neutral-400">
                 {formatElapsed(displayElapsedMs)}
               </span>
             )}
@@ -822,8 +836,8 @@ function EntryCard({
             }}
             onClick={() => !isDebounced && onLap(entry.id)}
             disabled={isDebounced}
-            className="relative flex items-center justify-center bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-blue-900 text-white font-black text-xl select-none transition-colors focus:outline-none"
-            style={{ minWidth: 80, minHeight: 80 }}
+            className="relative flex items-center justify-center bg-[#0a1b3d] hover:bg-[#0d2450] active:bg-[#071228] disabled:bg-neutral-800 text-white font-black text-xl transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            style={{ minWidth: 88, minHeight: 88 }}
             aria-label={`Lap for ${entry.racerName}`}
           >
             {isDebounced ? (

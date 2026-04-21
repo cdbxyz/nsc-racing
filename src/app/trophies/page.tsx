@@ -113,7 +113,7 @@ export default async function TrophiesPage() {
           <h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400 mb-3 pb-1 border-b border-neutral-100">
             {letter}
           </h2>
-          <div className="flex flex-col gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
             {group.map((trophy) => {
               const trophyAwards = awardsByTrophy.get(trophy.id) ?? [];
 
