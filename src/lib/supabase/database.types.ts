@@ -527,7 +527,7 @@ export type Database = {
           helm_id: string
           id: string
           notes: string | null
-          race_id: string
+          race_id: string | null
           trophy_id: string
           updated_at: string
         }
@@ -537,7 +537,7 @@ export type Database = {
           helm_id: string
           id?: string
           notes?: string | null
-          race_id: string
+          race_id?: string | null
           trophy_id: string
           updated_at?: string
         }
