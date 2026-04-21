@@ -41,6 +41,7 @@ export type Database = {
     Tables: {
       boat_classes: {
         Row: {
+          archived: boolean
           base_py: number
           created_at: string
           default_laps: number
@@ -50,6 +51,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean
           base_py: number
           created_at?: string
           default_laps?: number
@@ -59,6 +61,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean
           base_py?: number
           created_at?: string
           default_laps?: number
@@ -71,6 +74,7 @@ export type Database = {
       }
       boats: {
         Row: {
+          archived: boolean
           class_id: string
           colour: string | null
           created_at: string
@@ -81,6 +85,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean
           class_id: string
           colour?: string | null
           created_at?: string
@@ -91,6 +96,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean
           class_id?: string
           colour?: string | null
           created_at?: string
@@ -337,6 +343,7 @@ export type Database = {
       }
       racers: {
         Row: {
+          archived: boolean
           created_at: string
           default_boat_id: string | null
           display_name: string
@@ -347,6 +354,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived?: boolean
           created_at?: string
           default_boat_id?: string | null
           display_name: string
@@ -357,6 +365,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived?: boolean
           created_at?: string
           default_boat_id?: string | null
           display_name?: string
