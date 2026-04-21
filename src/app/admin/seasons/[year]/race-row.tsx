@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -69,9 +70,16 @@ export function RaceRow({ race, raceDate, trophies, allTrophies, locked }: Props
           </span>
         </td>
         <td className="py-2 text-right">
-          <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
-            {locked ? "View" : "Edit"}
-          </Button>
+          <div className="flex justify-end gap-1">
+            <Link href={`/race/${race.id}/setup`}>
+              <Button size="sm" variant="outline">
+                Set up
+              </Button>
+            </Link>
+            <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+              {locked ? "View" : "Edit"}
+            </Button>
+          </div>
         </td>
       </tr>
 
