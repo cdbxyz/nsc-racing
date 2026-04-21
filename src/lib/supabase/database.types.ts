@@ -154,7 +154,7 @@ export type Database = {
           id: string
           py_delta_after: number
           py_delta_before: number
-          race_id: string
+          race_id: string | null
           racer_id: string
           reason: string | null
           season_id: string
@@ -165,7 +165,7 @@ export type Database = {
           id?: string
           py_delta_after: number
           py_delta_before: number
-          race_id: string
+          race_id?: string | null
           racer_id: string
           reason?: string | null
           season_id: string
@@ -176,7 +176,7 @@ export type Database = {
           id?: string
           py_delta_after?: number
           py_delta_before?: number
-          race_id?: string
+          race_id?: string | null
           racer_id?: string
           reason?: string | null
           season_id?: string
@@ -569,6 +569,7 @@ export type Database = {
         Returns: string
       }
       create_season_from_template: { Args: { p_year: number }; Returns: string }
+      reset_season_deltas: { Args: { p_season_id: string }; Returns: undefined }
       undo_trophy_award: { Args: { p_award_id: string }; Returns: undefined }
     }
     Enums: {

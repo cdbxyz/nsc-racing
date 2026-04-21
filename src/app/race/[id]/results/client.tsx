@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
+import { toastError } from "@/lib/actions/toast";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -105,7 +106,6 @@ export function TrophySection({
   const [awards, setAwards] = useState<AwardState[]>(initialAwards);
   const [overrides, setOverrides] = useState<Record<string, string>>({}); // trophyId → racerId
   const [pending, setPending] = useState<Record<string, boolean>>({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const awardedRacerIds = new Set(awards.map((a) => a.racerId));
 
@@ -127,12 +127,11 @@ export function TrophySection({
   const handleAward = useCallback(
     async (trophyId: string, racerId: string) => {
       setPending((p) => ({ ...p, [trophyId]: true }));
-      setErrors((e) => ({ ...e, [trophyId]: "" }));
 
       const result = await awardTrophy(raceId, trophyId, racerId);
 
       if ("error" in result) {
-        setErrors((e) => ({ ...e, [trophyId]: result.error }));
+        toastError(result.error, (result as { errorId?: string }).errorId);
       } else {
         const entry = finishedEntries.find((e) => e.racerId === racerId);
         setAwards((prev) => [
@@ -145,6 +144,7 @@ export function TrophySection({
           },
         ]);
         setOverrides((o) => { const n = { ...o }; delete n[trophyId]; return n; });
+        toast.success("Trophy awarded.");
       }
 
       setPending((p) => ({ ...p, [trophyId]: false }));
@@ -155,14 +155,14 @@ export function TrophySection({
   const handleUndo = useCallback(
     async (trophyId: string, awardId: string) => {
       setPending((p) => ({ ...p, [trophyId]: true }));
-      setErrors((e) => ({ ...e, [trophyId]: "" }));
 
       const result = await undoAward(awardId, raceId);
 
       if ("error" in result) {
-        setErrors((e) => ({ ...e, [trophyId]: result.error }));
+        toastError(result.error, (result as { errorId?: string }).errorId);
       } else {
         setAwards((prev) => prev.filter((a) => a.trophyId !== trophyId));
+        toast.success("Award undone.");
       }
 
       setPending((p) => ({ ...p, [trophyId]: false }));
@@ -190,7 +190,6 @@ export function TrophySection({
         {trophies.map((trophy) => {
           const award = awards.find((a) => a.trophyId === trophy.trophyId);
           const isBusy = pending[trophy.trophyId] ?? false;
-          const err = errors[trophy.trophyId];
           const proposedRacerId =
             overrides[trophy.trophyId] ?? cascadeProposal(trophy.trophyId);
           const proposedEntry = finishedEntries.find(
@@ -262,7 +261,6 @@ export function TrophySection({
                 )}
               </div>
 
-              {err && <p className="text-xs text-red-600">{err}</p>}
             </div>
           );
         })}

@@ -131,6 +131,23 @@ export default async function ResultsPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-neutral-50 pb-16">
+      {/* Print-only header shown when printing */}
+      <div className="print-header px-8 pt-6 pb-4 border-b border-neutral-300 mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-bold text-lg">Nefyn Sailing Club</p>
+            <p className="text-sm text-neutral-600">nsc-racing.vercel.app</p>
+          </div>
+          <div className="text-right">
+            <p className="font-semibold">{race.name}</p>
+            <p className="text-sm text-neutral-600">
+              {formatRaceDate()} · {race.start_time.slice(0, 5)}
+              {season && ` · ${season.year}`}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <header className="bg-white border-b border-neutral-200 px-4 py-3 flex items-center justify-between no-print">
         <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-800">
           ← Home
@@ -140,7 +157,7 @@ export default async function ResultsPage({ params }: PageProps) {
 
       <div className="max-w-3xl mx-auto px-4 pt-6">
         {/* Race header */}
-        <div className="mb-6">
+        <div className="mb-6 no-print">
           <h1 className="text-2xl font-bold text-neutral-900">{race.name}</h1>
           <p className="text-sm text-neutral-500 mt-0.5">
             {formatRaceDate()} · {race.start_time.slice(0, 5)}

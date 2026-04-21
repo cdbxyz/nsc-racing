@@ -135,8 +135,23 @@
 }
 
 @media print {
-  header, nav, .no-print { display: none !important; }
-  body { background: white; }
-  table { border-collapse: collapse; }
-  td, th { border: 1px solid #e5e7eb; }
+  header, nav, footer, .no-print { display: none !important; }
+  body { background: white; color: black; font-size: 11pt; }
+  main { padding: 0 !important; }
+
+  /* Results page: print-only race header */
+  .print-header { display: block !important; }
+
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border: 1px solid #d1d5db; padding: 4pt 8pt; }
+  thead { background: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Avoid breaking rows across pages */
+  tr { page-break-inside: avoid; }
+  h1, h2 { page-break-after: avoid; }
+
+  a { color: black; text-decoration: none; }
 }
+
+/* Hidden on screen, shown when printing */
+.print-header { display: none; }

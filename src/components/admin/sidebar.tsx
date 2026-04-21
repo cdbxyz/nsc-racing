@@ -9,6 +9,7 @@ const NAV = [
   { href: "/admin/racers", label: "Racers" },
   { href: "/admin/trophies", label: "Trophies" },
   { href: "/admin/seasons", label: "Seasons" },
+  { href: "/admin/handicap", label: "Handicap" },
 ];
 
 export function AdminSidebar() {

@@ -47,16 +47,27 @@ export default function RootLayout({
               </div>
               <nav className="flex items-center gap-4">
                 <Link
-                  href="/results"
+                  href="/trophies"
                   className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
                 >
-                  Results
+                  Trophies
                 </Link>
                 <LockStatus />
               </nav>
             </div>
           </header>
-          {children}
+          <div className="flex-1">{children}</div>
+          <footer className="no-print border-t border-neutral-100 bg-white py-4 mt-auto">
+            <div className="mx-auto max-w-4xl px-4 flex items-center justify-between gap-4 text-xs text-neutral-400">
+              <span>Nefyn Sailing Club · NSC Racing</span>
+              <a
+                href="mailto:commodore@nefynsailingclub.org.uk"
+                className="hover:text-neutral-600 transition-colors"
+              >
+                Feedback / contact commodore
+              </a>
+            </div>
+          </footer>
         </Providers>
       </body>
     </html>
