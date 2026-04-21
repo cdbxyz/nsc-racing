@@ -217,13 +217,13 @@ export function HandicapTable({
       </div>
 
       {racers.length === 0 ? (
-        <p className="text-neutral-400 text-sm">No active racers.</p>
+        <p className="text-neutral-400 text-sm">No active helms.</p>
       ) : (
         <div className="rounded-lg border border-neutral-200 bg-white overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-100 text-xs text-neutral-400 uppercase tracking-wider">
-                <th className="py-2 px-4 text-left font-medium">Racer</th>
+                <th className="py-2 px-4 text-left font-medium">Helm</th>
                 <th className="py-2 px-4 text-left font-medium">Boat</th>
                 <th className="py-2 px-4 text-right font-medium">Base PY</th>
                 <th className="py-2 px-4 text-right font-medium">Δ</th>

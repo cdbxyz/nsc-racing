@@ -38,13 +38,13 @@ export default async function ResultsPage({ params }: PageProps) {
        seasons(year, start_date),
        race_trophies(display_order, trophy_id, trophies(name, accumulator_group)),
        race_entries(
-         id, racer_id, status, corrected_ms, normalised_elapsed_ms,
+         id, helm_id, status, corrected_ms, normalised_elapsed_ms,
          elapsed_ms, position_overall, position_class,
          base_py_snapshot, effective_py_snapshot, laps_to_sail,
-         racers(display_name, full_name),
+         helms(display_name, full_name),
          boats(sail_number, boat_classes(name))
        ),
-       trophy_awards(id, trophy_id, racer_id, racers(display_name, full_name))`
+       trophy_awards(id, trophy_id, helm_id, helms(display_name, full_name))`
     )
     .eq("id", raceId)
     .single();
@@ -67,7 +67,7 @@ export default async function ResultsPage({ params }: PageProps) {
 
   type RawEntry = {
     id: string;
-    racer_id: string;
+    helm_id: string;
     status: string;
     corrected_ms: number | null;
     normalised_elapsed_ms: number | null;
@@ -77,7 +77,7 @@ export default async function ResultsPage({ params }: PageProps) {
     base_py_snapshot: number | null;
     effective_py_snapshot: number | null;
     laps_to_sail: number | null;
-    racers: { display_name: string; full_name: string } | null;
+    helms: { display_name: string; full_name: string } | null;
     boats: { sail_number: string; boat_classes: { name: string } | null } | null;
   };
 
@@ -108,22 +108,22 @@ export default async function ResultsPage({ params }: PageProps) {
   type RawAward = {
     id: string;
     trophy_id: string;
-    racer_id: string;
-    racers: { display_name: string; full_name: string } | null;
+    helm_id: string;
+    helms: { display_name: string; full_name: string } | null;
   };
   const initialAwards: ExistingAward[] = (race.trophy_awards as RawAward[]).map(
     (a) => ({
       awardId: a.id,
       trophyId: a.trophy_id,
-      racerId: a.racer_id,
-      racerName: a.racers?.display_name ?? a.racers?.full_name ?? "?",
+      racerId: a.helm_id,
+      racerName: a.helms?.display_name ?? a.helms?.full_name ?? "?",
     })
   );
 
   const finishedForClient: FinishedEntry[] = finishedEntries.map((e) => ({
     entryId: e.id,
-    racerId: e.racer_id,
-    racerName: e.racers?.display_name ?? e.racers?.full_name ?? "?",
+    racerId: e.helm_id,
+    racerName: e.helms?.display_name ?? e.helms?.full_name ?? "?",
     positionOverall: e.position_overall!,
   }));
 
@@ -182,7 +182,7 @@ export default async function ResultsPage({ params }: PageProps) {
                 winnerCorrected != null && e.corrected_ms != null
                   ? e.corrected_ms - winnerCorrected
                   : null;
-              const name = e.racers?.display_name ?? e.racers?.full_name ?? "?";
+              const name = e.helms?.display_name ?? e.helms?.full_name ?? "?";
               const sail = e.boats?.sail_number ?? "?";
               const cls = e.boats?.boat_classes?.name ?? "?";
               return (
@@ -229,7 +229,7 @@ export default async function ResultsPage({ params }: PageProps) {
               <thead>
                 <tr className="border-b border-neutral-100 text-xs text-neutral-400 uppercase tracking-wider">
                   <th className="py-2 px-3 text-left font-medium">Pos</th>
-                  <th className="py-2 px-3 text-left font-medium">Racer</th>
+                  <th className="py-2 px-3 text-left font-medium">Helm</th>
                   <th className="py-2 px-3 text-left font-medium hidden sm:table-cell">Sail</th>
                   <th className="py-2 px-3 text-left font-medium hidden sm:table-cell">Class</th>
                   <th className="py-2 px-3 text-right font-medium hidden md:table-cell">Elapsed</th>
@@ -243,7 +243,7 @@ export default async function ResultsPage({ params }: PageProps) {
                     winnerCorrected != null && e.corrected_ms != null
                       ? e.corrected_ms - winnerCorrected
                       : null;
-                  const name = e.racers?.display_name ?? e.racers?.full_name ?? "?";
+                  const name = e.helms?.display_name ?? e.helms?.full_name ?? "?";
                   const sail = e.boats?.sail_number ?? "?";
                   const cls = e.boats?.boat_classes?.name ?? "?";
 
@@ -287,7 +287,7 @@ export default async function ResultsPage({ params }: PageProps) {
             </h2>
             <div className="flex flex-wrap gap-2">
               {nonFinishers.map((e) => {
-                const name = e.racers?.display_name ?? e.racers?.full_name ?? "?";
+                const name = e.helms?.display_name ?? e.helms?.full_name ?? "?";
                 return (
                   <span
                     key={e.id}

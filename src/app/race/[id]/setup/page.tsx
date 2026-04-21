@@ -28,14 +28,14 @@ export default async function RaceSetupPage({ params }: PageProps) {
            race_entries(
              id, race_id, laps_to_sail, status,
              base_py_snapshot, personal_py_delta_snapshot, effective_py_snapshot,
-             racers(full_name, display_name),
-             boats(sail_number, name, boat_classes(name))
+             helms(full_name, display_name),
+             boats(sail_number, owner, boat_classes(name))
            )`
         )
         .eq("id", raceId)
         .single(),
       supabase
-        .from("racers")
+        .from("helms")
         .select(
           "id, full_name, display_name, personal_py_delta, default_boat_id, boats(sail_number, boat_classes(name))"
         )
@@ -43,7 +43,7 @@ export default async function RaceSetupPage({ params }: PageProps) {
         .order("full_name"),
       supabase
         .from("boats")
-        .select("id, sail_number, name")
+        .select("id, sail_number, owner")
         .eq("archived", false)
         .order("sail_number"),
     ]);
@@ -60,14 +60,11 @@ export default async function RaceSetupPage({ params }: PageProps) {
 
   // Sort entries by name
   const entries = [...(race.race_entries ?? [])].sort((a, b) =>
-    (a.racers?.display_name ?? "").localeCompare(b.racers?.display_name ?? "")
+    (a.helms?.display_name ?? "").localeCompare(b.helms?.display_name ?? "")
   );
 
-  const enteredRacerIds = new Set(
-    entries.map((e) => {
-      // race_entries.racers is joined but we need racer_id — fetch it
-      return (e as unknown as { racer_id: string }).racer_id;
-    })
+  const enteredHelmIds = new Set(
+    entries.map((e) => (e as unknown as { helm_id: string }).helm_id)
   );
 
   // Compute race date from season start + day_offset
@@ -163,14 +160,14 @@ export default async function RaceSetupPage({ params }: PageProps) {
         </h2>
         {entries.length === 0 ? (
           <p className="text-sm text-neutral-400">
-            No entrants yet. Add racers below.
+            No entrants yet. Add helms below.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-neutral-200 text-left text-xs font-medium uppercase tracking-wider text-neutral-400">
-                  <th className="pb-2 pr-3">Racer</th>
+                  <th className="pb-2 pr-3">Helm</th>
                   <th className="pb-2 pr-3">Boat</th>
                   <th className="pb-2 pr-3">Class</th>
                   <th className="pb-2 pr-3 text-center">Laps</th>
@@ -203,7 +200,7 @@ export default async function RaceSetupPage({ params }: PageProps) {
           <RacerPicker
             raceId={raceId}
             racers={allRacers as Parameters<typeof RacerPicker>[0]["racers"] ?? []}
-            enteredRacerIds={enteredRacerIds}
+            enteredHelmIds={enteredHelmIds}
             locked={locked}
           />
         </section>

@@ -17,7 +17,7 @@ export async function awardTrophy(
     const { data, error } = await supabase.rpc("apply_trophy_award", {
       p_race_id: raceId,
       p_trophy_id: trophyId,
-      p_racer_id: racerId,
+      p_helm_id: racerId,
     });
 
     if (error) return serverActionError(error, "apply_trophy_award");

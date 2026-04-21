@@ -53,7 +53,7 @@ export default async function Home() {
       position_overall: number | null;
       corrected_ms: number | null;
       status: string;
-      racers: { display_name: string; full_name: string } | null;
+      helms: { display_name: string; full_name: string } | null;
       boats: { sail_number: string; boat_classes: { name: string } | null } | null;
     }[];
   };
@@ -65,7 +65,7 @@ export default async function Home() {
           `id, name, day_offset, start_time, status,
            race_trophies(trophies(name)),
            race_entries(id, position_overall, corrected_ms, status,
-             racers(display_name, full_name),
+             helms(display_name, full_name),
              boats(sail_number, boat_classes(name))
            )`
         )
@@ -103,8 +103,8 @@ export default async function Home() {
   const seasonRaceIds = races.map((r) => r.id);
 
   type AwardRow = {
-    racer_id: string;
-    racers: { display_name: string; full_name: string } | null;
+    helm_id: string;
+    helms: { display_name: string; full_name: string } | null;
     trophies: { accumulator_group: string | null } | null;
   };
 
@@ -112,7 +112,7 @@ export default async function Home() {
     seasonRaceIds.length > 0
       ? await supabase
           .from("trophy_awards")
-          .select("racer_id, racers(display_name, full_name), trophies(accumulator_group)")
+          .select("helm_id, helms(display_name, full_name), trophies(accumulator_group)")
           .in("race_id", seasonRaceIds)
       : { data: [] };
 
@@ -123,16 +123,16 @@ export default async function Home() {
   const tallyMap = new Map<string, { name: string; count: number }>();
   for (const a of nonAccAwards) {
     const name =
-      a.racers?.display_name ?? a.racers?.full_name ?? a.racer_id;
-    const existing = tallyMap.get(a.racer_id);
+      a.helms?.display_name ?? a.helms?.full_name ?? a.helm_id;
+    const existing = tallyMap.get(a.helm_id);
     if (existing) existing.count++;
-    else tallyMap.set(a.racer_id, { name, count: 1 });
+    else tallyMap.set(a.helm_id, { name, count: 1 });
   }
   const tally = [...tallyMap.values()].sort((a, b) => b.count - a.count);
 
-  // ── Racer count for empty-state detection ─────────────────────────────────
+  // ── Helm count for empty-state detection ──────────────────────────────────
   const { count: racerCount } = await supabase
-    .from("racers")
+    .from("helms")
     .select("id", { count: "exact", head: true })
     .eq("archived", false);
 
@@ -217,13 +217,13 @@ export default async function Home() {
             <>
               <p className="text-neutral-500 text-sm">
                 {(racerCount ?? 0) === 0
-                  ? "No racers set up yet."
+                  ? "No helms set up yet."
                   : "No races finished yet."}
               </p>
               {(racerCount ?? 0) === 0 && officer && (
-                <Link href="/admin/racers">
+                <Link href="/admin/helms">
                   <Button size="sm" variant="outline" className="mt-auto">
-                    Add racers
+                    Add helms
                   </Button>
                 </Link>
               )}
@@ -242,7 +242,7 @@ export default async function Home() {
                         {i + 1}.
                       </span>
                       <span className="font-medium text-neutral-900 truncate">
-                        {e.racers?.display_name ?? e.racers?.full_name ?? "?"}
+                        {e.helms?.display_name ?? e.helms?.full_name ?? "?"}
                       </span>
                       <span className="text-neutral-400 tabular-nums ml-auto shrink-0">
                         {e.corrected_ms != null ? msToTime(e.corrected_ms) : "—"}

@@ -21,7 +21,7 @@ export function AdminMobileNav() {
       </button>
 
       <Sheet open={open} onClose={() => setOpen(false)} title="Admin">
-        <AdminSidebar onNavigate={() => setOpen(false)} />
+        <AdminSidebar />
       </Sheet>
     </>
   );

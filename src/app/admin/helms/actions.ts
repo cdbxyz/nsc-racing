@@ -34,12 +34,12 @@ export async function upsertRacer(
   };
 
   const { error } = id
-    ? await supabase.from("racers").update(payload).eq("id", id)
-    : await supabase.from("racers").insert(payload);
+    ? await supabase.from("helms").update(payload).eq("id", id)
+    : await supabase.from("helms").insert(payload);
 
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/racers");
+  revalidatePath("/admin/helms");
   return null;
 }
 
@@ -47,14 +47,14 @@ export async function deleteRacer(id: string): Promise<ActionState> {
   await requireUnlocked();
   const supabase = createServiceClient();
 
-  const { error } = await supabase.from("racers").delete().eq("id", id);
+  const { error } = await supabase.from("helms").delete().eq("id", id);
 
   if (error) {
     if (error.code === "23503") return { error: "in_use" };
     return { error: error.message };
   }
 
-  revalidatePath("/admin/racers");
+  revalidatePath("/admin/helms");
   return null;
 }
 
@@ -63,12 +63,12 @@ export async function archiveRacer(id: string): Promise<ActionState> {
   const supabase = createServiceClient();
 
   const { error } = await supabase
-    .from("racers")
+    .from("helms")
     .update({ archived: true })
     .eq("id", id);
 
   if (error) return { error: error.message };
 
-  revalidatePath("/admin/racers");
+  revalidatePath("/admin/helms");
   return null;
 }

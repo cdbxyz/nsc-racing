@@ -228,7 +228,7 @@ export function TrophySection({
                       >
                         {proposedEntry
                           ? `${proposedEntry.racerName} (P${proposedEntry.positionOverall})`
-                          : "Select racer"}
+                          : "Select helm"}
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         {finishedEntries.map((e) => (

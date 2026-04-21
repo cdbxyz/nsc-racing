@@ -14,22 +14,22 @@ import { DeleteDialog } from "@/components/admin/delete-dialog";
 import { upsertRacer, deleteRacer, archiveRacer } from "./actions";
 import type { Database } from "@/lib/supabase/database.types";
 
-type Racer = Database["public"]["Tables"]["racers"]["Row"];
+type Helm = Database["public"]["Tables"]["helms"]["Row"];
 type Boat = Pick<
   Database["public"]["Tables"]["boats"]["Row"],
-  "id" | "sail_number" | "name"
+  "id" | "sail_number" | "owner"
 >;
 
 interface RacersClientProps {
-  racers: (Racer & { boats: { sail_number: string; name: string | null } | null })[];
+  racers: (Helm & { boats: { sail_number: string; owner: string | null } | null })[];
   boats: Boat[];
 }
 
 export function RacersClient({ racers, boats }: RacersClientProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogKey, setDialogKey] = useState(0);
-  const [editing, setEditing] = useState<Racer | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Racer | null>(null);
+  const [editing, setEditing] = useState<Helm | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Helm | null>(null);
   const [inUse, setInUse] = useState(false);
 
   const [state, formAction, pending] = useActionState(upsertRacer, null);
@@ -40,7 +40,7 @@ export function RacersClient({ racers, boats }: RacersClientProps) {
     setDialogOpen(true);
   }
 
-  function openEdit(r: Racer) {
+  function openEdit(r: Helm) {
     setEditing(r);
     setDialogKey((k) => k + 1);
     setDialogOpen(true);
@@ -49,9 +49,9 @@ export function RacersClient({ racers, boats }: RacersClientProps) {
   return (
     <>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-neutral-900">Racers</h1>
+        <h1 className="text-xl font-semibold text-neutral-900">Helms</h1>
         <Button size="sm" onClick={openCreate}>
-          Add racer
+          Add helm
         </Button>
       </div>
 
@@ -82,7 +82,7 @@ export function RacersClient({ racers, boats }: RacersClientProps) {
               <td className="py-2 pr-4 text-neutral-600">{r.display_name}</td>
               <td className="py-2 pr-4 text-neutral-500">
                 {r.boats
-                  ? `${r.boats.sail_number}${r.boats.name ? ` (${r.boats.name})` : ""}`
+                  ? `${r.boats.sail_number}${r.boats.owner ? ` (${r.boats.owner})` : ""}`
                   : "—"}
               </td>
               <td className="py-2 pr-4 text-neutral-500">
@@ -113,7 +113,7 @@ export function RacersClient({ racers, boats }: RacersClientProps) {
           {racers.length === 0 && (
             <tr>
               <td colSpan={5} className="py-8 text-center text-neutral-400">
-                No racers yet.
+                No helms yet.
               </td>
             </tr>
           )}
@@ -124,7 +124,7 @@ export function RacersClient({ racers, boats }: RacersClientProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editing ? "Edit racer" : "Add racer"}
+              {editing ? "Edit helm" : "Add helm"}
             </DialogTitle>
           </DialogHeader>
           <form key={dialogKey} action={formAction} className="flex flex-col gap-4">
@@ -159,7 +159,7 @@ export function RacersClient({ racers, boats }: RacersClientProps) {
                 {boats.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.sail_number}
-                    {b.name ? ` – ${b.name}` : ""}
+                    {b.owner ? ` – ${b.owner}` : ""}
                   </option>
                 ))}
               </select>

@@ -86,7 +86,7 @@ export default async function SeasonPage({ params }: PageProps) {
 
       {locked && (
         <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Season locked — first race has started. All fields are read-only.
+          Season locked — first race has started. Draft races can still be rescheduled; started and finished races are read-only.
         </div>
       )}
 
@@ -109,7 +109,8 @@ export default async function SeasonPage({ params }: PageProps) {
               raceDate={formatDate(raceDate(start, race.day_offset))}
               trophies={race.race_trophies ?? []}
               allTrophies={allTrophies ?? []}
-              locked={locked}
+              locked={race.status !== "draft"}
+              seasonLocked={locked}
             />
           ))}
         </tbody>

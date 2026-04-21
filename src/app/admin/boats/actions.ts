@@ -16,15 +16,15 @@ export async function upsertBoat(
   const id = formData.get("id") as string | null;
   const sail_number = (formData.get("sail_number") as string).trim();
   const class_id = (formData.get("class_id") as string).trim();
-  const name = (formData.get("name") as string).trim() || null;
-  const colour = (formData.get("colour") as string).trim() || null;
+  const owner = (formData.get("owner") as string).trim() || null;
+  const hull_colour = (formData.get("hull_colour") as string).trim() || null;
   const notes = (formData.get("notes") as string).trim() || null;
 
   if (!sail_number || !class_id) {
     return { error: "Sail number and class are required." };
   }
 
-  const payload = { sail_number, class_id, name, colour, notes };
+  const payload = { sail_number, class_id, owner, hull_colour, notes };
 
   const { error } = id
     ? await supabase.from("boats").update(payload).eq("id", id)

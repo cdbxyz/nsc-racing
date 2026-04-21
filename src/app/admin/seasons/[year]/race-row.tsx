@@ -29,9 +29,10 @@ interface Props {
   trophies: RaceTrophy[];
   allTrophies: Trophy[];
   locked: boolean;
+  seasonLocked?: boolean;
 }
 
-export function RaceRow({ race, raceDate, trophies, allTrophies, locked }: Props) {
+export function RaceRow({ race, raceDate, trophies, allTrophies, locked, seasonLocked }: Props) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(updateRace, null);
 
@@ -87,7 +88,7 @@ export function RaceRow({ race, raceDate, trophies, allTrophies, locked }: Props
               </Button>
             </Link>
             <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
-              {locked ? "View" : "Edit"}
+              {locked ? "View" : seasonLocked ? "✎ Reschedule" : "Edit"}
             </Button>
           </div>
         </td>
@@ -104,7 +105,12 @@ export function RaceRow({ race, raceDate, trophies, allTrophies, locked }: Props
 
           {locked && (
             <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
-              Season locked — first race has started. Fields are read-only.
+              Race has started — fields are read-only.
+            </div>
+          )}
+          {!locked && seasonLocked && (
+            <div className="rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-sm text-blue-800">
+              Season locked, but this race hasn&apos;t started — date, time, laps, and course are still editable.
             </div>
           )}
 

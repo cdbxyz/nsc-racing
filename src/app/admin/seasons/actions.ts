@@ -52,12 +52,43 @@ export async function updateRace(
   const use_base_py_only = formData.get("use_base_py_only") === "on";
   const notes = (formData.get("notes") as string).trim() || null;
 
+  // Server-side check: only draft races may be edited
+  const { data: existing } = await supabase
+    .from("races")
+    .select("status, start_time, reference_laps, course_description, use_base_py_only, notes")
+    .eq("id", id)
+    .single();
+
+  if (!existing) return { error: "Race not found." };
+  if (existing.status !== "draft") {
+    return { error: "Only draft races can be rescheduled." };
+  }
+
   const { error } = await supabase
     .from("races")
     .update({ start_time, reference_laps, course_description, use_base_py_only, notes })
     .eq("id", id);
 
   if (error) return { error: error.message };
+
+  // Audit log — record changes
+  const changes: Array<{ field: string; old_value: string | null; new_value: string | null }> = [];
+  if (existing.start_time !== start_time)
+    changes.push({ field: "start_time", old_value: existing.start_time, new_value: start_time });
+  if ((existing.reference_laps ?? null) !== reference_laps)
+    changes.push({ field: "reference_laps", old_value: String(existing.reference_laps ?? ""), new_value: String(reference_laps ?? "") });
+  if ((existing.course_description ?? null) !== course_description)
+    changes.push({ field: "course_description", old_value: existing.course_description, new_value: course_description });
+  if (existing.use_base_py_only !== use_base_py_only)
+    changes.push({ field: "use_base_py_only", old_value: String(existing.use_base_py_only), new_value: String(use_base_py_only) });
+  if ((existing.notes ?? null) !== notes)
+    changes.push({ field: "notes", old_value: existing.notes, new_value: notes });
+
+  if (changes.length > 0) {
+    await supabase.from("race_audit_log").insert(
+      changes.map((c) => ({ race_id: id, ...c }))
+    );
+  }
 
   revalidatePath("/admin/seasons");
   return null;

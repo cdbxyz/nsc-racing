@@ -53,8 +53,8 @@ export default async function TrophiesPage() {
   const { data: awardsRaw } = await supabase
     .from("trophy_awards")
     .select(
-      `id, trophy_id, racer_id, awarded_at,
-       racers(display_name, full_name),
+      `id, trophy_id, helm_id, awarded_at,
+       helms(display_name, full_name),
        races(day_offset, season_id, seasons(year, start_date))`
     )
     .order("awarded_at", { ascending: false });
@@ -62,9 +62,9 @@ export default async function TrophiesPage() {
   type RawAward = {
     id: string;
     trophy_id: string;
-    racer_id: string;
+    helm_id: string;
     awarded_at: string;
-    racers: { display_name: string; full_name: string } | null;
+    helms: { display_name: string; full_name: string } | null;
     races: {
       day_offset: number;
       season_id: string;
@@ -158,8 +158,8 @@ export default async function TrophiesPage() {
                       </p>
                       {currentWinner ? (
                         <p className="font-medium text-neutral-900">
-                          {currentWinner.racers?.display_name ??
-                            currentWinner.racers?.full_name ?? "?"}
+                          {currentWinner.helms?.display_name ??
+                            currentWinner.helms?.full_name ?? "?"}
                         </p>
                       ) : (
                         <p className="text-neutral-400">Not yet awarded</p>
@@ -171,8 +171,8 @@ export default async function TrophiesPage() {
                       </p>
                       {lastWinner ? (
                         <p className="font-medium text-neutral-900">
-                          {lastWinner.racers?.display_name ??
-                            lastWinner.racers?.full_name ?? "?"}
+                          {lastWinner.helms?.display_name ??
+                            lastWinner.helms?.full_name ?? "?"}
                         </p>
                       ) : (
                         <p className="text-neutral-400">—</p>
@@ -202,8 +202,8 @@ export default async function TrophiesPage() {
                                 {season?.year ?? "?"}
                               </span>
                               <span className="font-medium text-neutral-900">
-                                {a.racers?.display_name ??
-                                  a.racers?.full_name ?? "?"}
+                                {a.helms?.display_name ??
+                                  a.helms?.full_name ?? "?"}
                               </span>
                               <span className="ml-auto text-neutral-400 text-xs">
                                 {date}

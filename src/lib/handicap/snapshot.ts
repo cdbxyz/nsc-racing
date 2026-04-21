@@ -11,11 +11,6 @@ export interface EntrySnapshot {
   laps_to_sail: number;
 }
 
-/**
- * Resolve the PY snapshot for a racer entering a race.
- * Pass boatOverrideId to use a boat other than the racer's default.
- * Throws a descriptive string if any required data is missing.
- */
 export async function computeEntrySnapshot(
   racerId: string,
   boatOverrideId?: string | null
@@ -24,15 +19,15 @@ export async function computeEntrySnapshot(
 
   // 1. Load racer
   const { data: racer, error: racerErr } = await supabase
-    .from("racers")
+    .from("helms")
     .select("default_boat_id, personal_py_delta")
     .eq("id", racerId)
     .single();
 
-  if (racerErr || !racer) throw new Error("Racer not found.");
+  if (racerErr || !racer) throw new Error("Helm not found.");
 
   const boatId = boatOverrideId ?? racer.default_boat_id;
-  if (!boatId) throw new Error("Racer has no default boat. Select a boat to continue.");
+  if (!boatId) throw new Error("Helm has no default boat. Select a boat to continue.");
 
   // 2. Load boat + class
   const { data: boat, error: boatErr } = await supabase

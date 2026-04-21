@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { addEntry } from "./actions";
 
-interface Racer {
+interface Helm {
   id: string;
   full_name: string;
   display_name: string;
@@ -15,12 +15,12 @@ interface Racer {
 
 interface Props {
   raceId: string;
-  racers: Racer[];
-  enteredRacerIds: Set<string>;
+  racers: Helm[];
+  enteredHelmIds: Set<string>;
   locked: boolean;
 }
 
-export function RacerPicker({ raceId, racers, enteredRacerIds, locked }: Props) {
+export function RacerPicker({ raceId, racers, enteredHelmIds, locked }: Props) {
   const [query, setQuery] = useState("");
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [state, formAction] = useActionState(addEntry, null);
@@ -35,7 +35,7 @@ export function RacerPicker({ raceId, racers, enteredRacerIds, locked }: Props) 
   return (
     <div className="flex flex-col gap-3">
       <Input
-        placeholder="Search racers…"
+        placeholder="Search helms…"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="max-w-xs"
@@ -47,10 +47,10 @@ export function RacerPicker({ raceId, racers, enteredRacerIds, locked }: Props) 
 
       <div className="rounded-lg border border-neutral-200 divide-y divide-neutral-100 max-h-80 overflow-y-auto">
         {filtered.length === 0 && (
-          <p className="px-4 py-3 text-sm text-neutral-400">No racers found.</p>
+          <p className="px-4 py-3 text-sm text-neutral-400">No helms found.</p>
         )}
         {filtered.map((r) => {
-          const already = enteredRacerIds.has(r.id);
+          const already = enteredHelmIds.has(r.id);
           return (
             <form
               key={r.id}
@@ -59,7 +59,7 @@ export function RacerPicker({ raceId, racers, enteredRacerIds, locked }: Props) 
               className="flex items-center justify-between px-4 py-2.5 hover:bg-neutral-50"
             >
               <input type="hidden" name="race_id" value={raceId} />
-              <input type="hidden" name="racer_id" value={r.id} />
+              <input type="hidden" name="helm_id" value={r.id} />
 
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-neutral-900">

@@ -59,9 +59,9 @@ export function BoatsClient({ boats, classes }: BoatsClientProps) {
         <thead>
           <tr className="border-b border-neutral-200 text-left text-xs font-medium uppercase tracking-wider text-neutral-400">
             <th className="pb-2 pr-4">Sail no.</th>
-            <th className="pb-2 pr-4">Name</th>
+            <th className="pb-2 pr-4">Owner</th>
             <th className="pb-2 pr-4">Class</th>
-            <th className="pb-2 pr-4">Colour</th>
+            <th className="pb-2 pr-4">Hull colour</th>
             <th className="pb-2"></th>
           </tr>
         </thead>
@@ -79,11 +79,11 @@ export function BoatsClient({ boats, classes }: BoatsClientProps) {
                   </span>
                 )}
               </td>
-              <td className="py-2 pr-4 text-neutral-600">{b.name ?? "—"}</td>
+              <td className="py-2 pr-4 text-neutral-600">{b.owner ?? "—"}</td>
               <td className="py-2 pr-4 text-neutral-600">
                 {b.boat_classes?.name ?? "—"}
               </td>
-              <td className="py-2 pr-4 text-neutral-500">{b.colour ?? "—"}</td>
+              <td className="py-2 pr-4 text-neutral-500">{b.hull_colour ?? "—"}</td>
               <td className="py-2 text-right">
                 <div className="flex justify-end gap-2">
                   <Button size="sm" variant="ghost" onClick={() => openEdit(b)}>
@@ -148,19 +148,19 @@ export function BoatsClient({ boats, classes }: BoatsClientProps) {
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="name">Name (optional)</Label>
+              <Label htmlFor="owner">Owner (optional)</Label>
               <Input
-                id="name"
-                name="name"
-                defaultValue={editing?.name ?? ""}
+                id="owner"
+                name="owner"
+                defaultValue={editing?.owner ?? ""}
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="colour">Colour (optional)</Label>
+              <Label htmlFor="hull_colour">Hull colour (optional)</Label>
               <Input
-                id="colour"
-                name="colour"
-                defaultValue={editing?.colour ?? ""}
+                id="hull_colour"
+                name="hull_colour"
+                defaultValue={editing?.hull_colour ?? ""}
               />
             </div>
             <div className="flex flex-col gap-1.5">

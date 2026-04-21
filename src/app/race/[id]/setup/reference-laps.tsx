@@ -8,7 +8,7 @@ import { updateReferenceLaps } from "./actions";
 
 interface Entry {
   laps_to_sail: number | null;
-  racers: { display_name: string } | null;
+  helms: { display_name: string } | null;
   boats: { sail_number: string } | null;
 }
 
@@ -71,7 +71,7 @@ export function ReferenceLapsPanel({ raceId, referenceLaps, entries, locked }: P
                 <span key={i}>
                   {i > 0 && ", "}
                   <span className="font-medium">
-                    {e.boats?.sail_number ?? e.racers?.display_name ?? "?"}
+                    {e.boats?.sail_number ?? e.helms?.display_name ?? "?"}
                   </span>{" "}
                   ({e.laps_to_sail} lap{e.laps_to_sail !== 1 ? "s" : ""}) will be
                   pro-rated to {effective}.

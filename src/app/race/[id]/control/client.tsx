@@ -16,12 +16,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  startCountdown,
+  abandonCountdown,
+  transitionToRunning,
   startRace,
   recordLap,
   setEntryStatus,
   undoLastLap,
   finishRace,
 } from "./actions";
+import { primeAudio, isAudioPrimed, playHorn } from "@/lib/audio/horn";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const COUNTDOWN_DURATION_MS = 10 * 60 * 1000;
+// Horn at T-10:00 (fired immediately on start), T-5:00, T-1:00, T-0:00
+const HORN_MARKS_MS = [5 * 60 * 1000, 60 * 1000, 0];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,8 +57,8 @@ export interface InitialEntry {
 }
 
 interface EntryState extends InitialEntry {
-  pendingLaps: number; // in-flight laps not yet server-confirmed
-  debounceUntil: number | null; // performance.now() timestamp
+  pendingLaps: number;
+  debounceUntil: number | null;
 }
 
 type PendingAction =
@@ -74,15 +84,20 @@ type PendingAction =
 
 interface State {
   raceStatus: "draft" | "running" | "finished";
+  countdownStartedAt: string | null;
   startedAt: string | null;
   entries: EntryState[];
   queue: PendingAction[];
   isOnline: boolean;
   clockMs: number;
+  countdownMs: number;
   error: string | null;
 }
 
 type Action =
+  | { type: "COUNTDOWN_STARTED"; countdownStartedAt: string }
+  | { type: "COUNTDOWN_ABANDONED" }
+  | { type: "COUNTDOWN_TICK"; countdownMs: number }
   | { type: "RACE_STARTED"; startedAt: string }
   | { type: "RACE_FINISHED" }
   | { type: "TAP_LAP"; entryId: string; cumulativeMs: number; clientId: string }
@@ -118,6 +133,14 @@ function formatClock(ms: number) {
   return `${pad(m)}:${pad(s)}`;
 }
 
+function formatCountdown(ms: number) {
+  const clamped = Math.max(0, ms);
+  const totalSec = Math.ceil(clamped / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${pad(m)}:${pad(s)}`;
+}
+
 function formatElapsed(ms: number) {
   const totalSec = Math.floor(ms / 1000);
   const m = Math.floor(totalSec / 60);
@@ -134,8 +157,28 @@ function clientId() {
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
+    case "COUNTDOWN_STARTED":
+      return {
+        ...state,
+        countdownStartedAt: action.countdownStartedAt,
+        countdownMs: COUNTDOWN_DURATION_MS,
+        error: null,
+      };
+
+    case "COUNTDOWN_ABANDONED":
+      return { ...state, countdownStartedAt: null, countdownMs: 0 };
+
+    case "COUNTDOWN_TICK":
+      return { ...state, countdownMs: action.countdownMs };
+
     case "RACE_STARTED":
-      return { ...state, raceStatus: "running", startedAt: action.startedAt, error: null };
+      return {
+        ...state,
+        raceStatus: "running",
+        startedAt: action.startedAt,
+        countdownStartedAt: null,
+        error: null,
+      };
 
     case "RACE_FINISHED":
       return { ...state, raceStatus: "finished" };
@@ -219,7 +262,6 @@ function reducer(state: State, action: Action): State {
         type: "undo",
         entryId: action.entryId,
       };
-      // Only add to queue if there are server-confirmed laps to undo
       const shouldQueue = entry.serverLaps.length > 0;
       return {
         ...state,
@@ -232,7 +274,6 @@ function reducer(state: State, action: Action): State {
       return { ...state, queue: state.queue.filter((q) => q.clientId !== action.clientId) };
 
     case "ACTION_FAILED":
-      // Remove failed action from queue (will be retried if still pending)
       return { ...state, queue: state.queue.filter((q) => q.clientId !== action.clientId) };
 
     case "TICK":
@@ -273,8 +314,15 @@ interface Props {
   referenceLaps: number | null;
   initialStatus: "draft" | "running" | "finished";
   initialStartedAt: string | null;
+  initialCountdownStartedAt: string | null;
   initialEntries: InitialEntry[];
   seasonYear: number | null;
+}
+
+function deriveInitialCountdownMs(countdownStartedAt: string | null): number {
+  if (!countdownStartedAt) return 0;
+  const elapsed = Date.now() - new Date(countdownStartedAt).getTime();
+  return Math.max(0, COUNTDOWN_DURATION_MS - elapsed);
 }
 
 export function ControlClient({
@@ -288,11 +336,13 @@ export function ControlClient({
   referenceLaps,
   initialStatus,
   initialStartedAt,
+  initialCountdownStartedAt,
   initialEntries,
   seasonYear,
 }: Props) {
   const [state, dispatch] = useReducer(reducer, {
     raceStatus: initialStatus,
+    countdownStartedAt: initialCountdownStartedAt,
     startedAt: initialStartedAt,
     entries: initialEntries.map((e) => ({
       ...e,
@@ -302,18 +352,59 @@ export function ControlClient({
     queue: [],
     isOnline: true,
     clockMs: 0,
+    countdownMs: deriveInitialCountdownMs(initialCountdownStartedAt),
     error: null,
   });
 
-  // Monotonic clock anchor: performance.now() value corresponding to race start
+  const isCountdown = state.raceStatus === "draft" && state.countdownStartedAt !== null;
+
   const perfAnchorRef = useRef<number | null>(null);
-  // Prevent concurrent queue processing
   const processingRef = useRef(false);
-  // Dispatch ref so effects don't need dispatch in deps
   const dispatchRef = useRef(dispatch);
   dispatchRef.current = dispatch;
+  const hornsFiredRef = useRef(new Set<number>());
+  const transitioningRef = useRef(false);
 
-  // ── Initialise performance anchor ─────────────────────────────────────────
+  // ── Audio prime state ──────────────────────────────────────────────────────
+  const [audioPrimed, setAudioPrimed] = useState(false);
+
+  function ensureAudio() {
+    if (!isAudioPrimed()) {
+      primeAudio();
+      setAudioPrimed(true);
+    }
+  }
+
+  // ── Screen Wake Lock ───────────────────────────────────────────────────────
+  useEffect(() => {
+    if (state.raceStatus !== "running" && !isCountdown) return;
+    if (typeof navigator === "undefined" || !("wakeLock" in navigator)) return;
+
+    let wakeLock: WakeLockSentinel | null = null;
+
+    async function acquire() {
+      try {
+        wakeLock = await (navigator as Navigator & { wakeLock: WakeLock }).wakeLock.request("screen");
+      } catch {
+        // Not supported or denied
+      }
+    }
+
+    acquire();
+
+    function onVisibility() {
+      if (document.visibilityState === "visible") acquire();
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      wakeLock?.release().catch(() => {});
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.raceStatus, isCountdown]);
+
+  // ── Initialise performance anchor for race clock ───────────────────────────
   useEffect(() => {
     if (state.startedAt && perfAnchorRef.current === null) {
       const serverMs = new Date(state.startedAt).getTime();
@@ -322,7 +413,7 @@ export function ControlClient({
     }
   }, [state.startedAt]);
 
-  // ── Clock tick every second ────────────────────────────────────────────────
+  // ── Race clock tick ────────────────────────────────────────────────────────
   useEffect(() => {
     if (state.raceStatus !== "running") return;
     const tick = () => {
@@ -335,6 +426,69 @@ export function ControlClient({
     tick();
     return () => clearInterval(id);
   }, [state.raceStatus]);
+
+  // ── Countdown tick ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isCountdown || !state.countdownStartedAt) return;
+
+    const countdownStartedAt = state.countdownStartedAt;
+
+    function computeRemaining() {
+      const elapsed = Date.now() - new Date(countdownStartedAt).getTime();
+      return Math.max(0, COUNTDOWN_DURATION_MS - elapsed);
+    }
+
+    const tick = () => {
+      const remaining = computeRemaining();
+      dispatchRef.current({ type: "COUNTDOWN_TICK", countdownMs: remaining });
+
+      // Fire horns at marks
+      for (const mark of HORN_MARKS_MS) {
+        if (!hornsFiredRef.current.has(mark) && remaining <= mark + 800) {
+          hornsFiredRef.current.add(mark);
+          playHorn();
+        }
+      }
+
+      // Transition to running at T-0
+      if (remaining === 0 && !transitioningRef.current) {
+        transitioningRef.current = true;
+        transitionToRunning(raceId).then((res) => {
+          if ("error" in res) {
+            dispatchRef.current({ type: "SET_ERROR", msg: res.error });
+          } else {
+            const serverMs = new Date(res.startedAt).getTime();
+            perfAnchorRef.current = performance.now() - (Date.now() - serverMs);
+            dispatchRef.current({ type: "RACE_STARTED", startedAt: res.startedAt });
+          }
+          transitioningRef.current = false;
+        });
+      }
+    };
+
+    const id = setInterval(tick, 200);
+    tick();
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCountdown, state.countdownStartedAt, raceId]);
+
+  // ── Re-sync countdown on tab focus ────────────────────────────────────────
+  useEffect(() => {
+    if (!isCountdown || !state.countdownStartedAt) return;
+    const countdownStartedAt = state.countdownStartedAt;
+
+    function onVisibility() {
+      if (document.visibilityState === "visible") {
+        const elapsed = Date.now() - new Date(countdownStartedAt).getTime();
+        const remaining = Math.max(0, COUNTDOWN_DURATION_MS - elapsed);
+        dispatchRef.current({ type: "COUNTDOWN_TICK", countdownMs: remaining });
+      }
+    }
+
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCountdown, state.countdownStartedAt]);
 
   // ── Debounce clear timers ─────────────────────────────────────────────────
   useEffect(() => {
@@ -354,7 +508,6 @@ export function ControlClient({
       }
     }
     return () => timers.forEach(clearTimeout);
-    // Only run when debounceUntil values change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.entries.map((e) => e.debounceUntil).join(",")]);
 
@@ -376,7 +529,6 @@ export function ControlClient({
   }, []);
 
   // ── Queue processor ────────────────────────────────────────────────────────
-  // We hold a ref to the latest queue/state so processQueue can read it
   const stateRef = useRef(state);
   stateRef.current = state;
 
@@ -424,18 +576,15 @@ export function ControlClient({
         });
       }
     } catch (err) {
-      // Leave in queue for retry on next network event
       console.warn("Queue action failed, will retry:", err);
     } finally {
       processingRef.current = false;
-      // If there are more items in the queue, process next
       if (stateRef.current.queue.length > 1) {
         setTimeout(processQueue, 50);
       }
     }
   }, [raceId]);
 
-  // Process queue whenever it grows or we come back online
   useEffect(() => {
     if (state.queue.length > 0 && state.isOnline) {
       processQueue();
@@ -444,21 +593,76 @@ export function ControlClient({
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const [starting, setStarting] = useState(false);
+  const [countdownStarting, setCountdownStarting] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const [holdingAbandon, setHoldingAbandon] = useState(false);
+  const [abandonProgress, setAbandonProgress] = useState(0);
+  const abandonTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abandonAnimRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  async function handleStartRace() {
-    setStarting(true);
-    const res = await startRace(raceId);
-    setStarting(false);
+  async function handleStartCountdown() {
+    ensureAudio();
+    setCountdownStarting(true);
+    const res = await startCountdown(raceId);
+    setCountdownStarting(false);
     if ("error" in res) {
       dispatch({ type: "SET_ERROR", msg: res.error });
       return;
     }
-    // Anchor the perf clock to the server timestamp
+    hornsFiredRef.current = new Set(); // reset horn tracking
+    transitioningRef.current = false;
+    playHorn(); // T-10 signal
+    dispatch({ type: "COUNTDOWN_STARTED", countdownStartedAt: res.countdownStartedAt });
+  }
+
+  async function handleStartImmediately() {
+    ensureAudio();
+    const res = await startRace(raceId);
+    if ("error" in res) {
+      dispatch({ type: "SET_ERROR", msg: res.error });
+      return;
+    }
     const serverMs = new Date(res.startedAt).getTime();
     perfAnchorRef.current = performance.now() - (Date.now() - serverMs);
+    playHorn();
     dispatch({ type: "RACE_STARTED", startedAt: res.startedAt });
+  }
+
+  function handleAbandonStart() {
+    setHoldingAbandon(true);
+    setAbandonProgress(0);
+
+    const startTime = Date.now();
+    abandonAnimRef.current = setInterval(() => {
+      const pct = Math.min(100, ((Date.now() - startTime) / 2000) * 100);
+      setAbandonProgress(pct);
+    }, 30);
+
+    abandonTimerRef.current = setTimeout(async () => {
+      clearInterval(abandonAnimRef.current!);
+      setHoldingAbandon(false);
+      setAbandonProgress(0);
+      const res = await abandonCountdown(raceId);
+      if ("error" in res) {
+        dispatch({ type: "SET_ERROR", msg: res.error });
+      } else {
+        hornsFiredRef.current = new Set();
+        dispatch({ type: "COUNTDOWN_ABANDONED" });
+      }
+    }, 2000);
+  }
+
+  function handleAbandonEnd() {
+    if (abandonTimerRef.current) {
+      clearTimeout(abandonTimerRef.current);
+      abandonTimerRef.current = null;
+    }
+    if (abandonAnimRef.current) {
+      clearInterval(abandonAnimRef.current);
+      abandonAnimRef.current = null;
+    }
+    setHoldingAbandon(false);
+    setAbandonProgress(0);
   }
 
   function handleTapLap(entryId: string) {
@@ -495,25 +699,33 @@ export function ControlClient({
 
   // ── Derived state ─────────────────────────────────────────────────────────
 
-  const allDone = state.entries.length > 0 &&
+  const allDone =
+    state.entries.length > 0 &&
     state.entries.every((e) => e.status !== "racing");
 
   const canFinish = state.raceStatus === "running" && allDone && state.queue.length === 0;
 
   const pendingCount = state.queue.length;
 
-  // Split entries: racing on top, done at bottom
   const racingEntries = state.entries.filter((e) => e.status === "racing");
   const doneEntries = state.entries.filter((e) => e.status !== "racing");
+
+  // Countdown colour based on remaining time
+  function countdownColorClass() {
+    const ms = state.countdownMs;
+    if (ms <= 10000) return "text-red-400";
+    if (ms <= 60000) return "text-amber-400";
+    if (ms <= 5 * 60 * 1000) return "text-blue-300";
+    return "text-white";
+  }
 
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col bg-neutral-950 text-white overflow-auto select-none ${
-        state.raceStatus === "running" ? "race-running" : ""
-      }`}
+      className={`fixed inset-0 z-50 flex flex-col bg-neutral-950 text-white overflow-auto select-none`}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      onClick={ensureAudio}
     >
       {/* ── Sticky header ── */}
       <header
@@ -521,7 +733,6 @@ export function ControlClient({
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
       >
         <div className="max-w-xl mx-auto flex items-center justify-between gap-3">
-          {/* Race info */}
           <div className="flex-1 min-w-0">
             {seasonYear && (
               <Link
@@ -540,7 +751,7 @@ export function ControlClient({
             </p>
           </div>
 
-          {/* Clock */}
+          {/* Race clock (running only) */}
           {state.raceStatus === "running" && (
             <div className="font-mono font-bold text-white tabular-nums text-2xl md:text-3xl">
               {formatClock(state.clockMs)}
@@ -549,7 +760,11 @@ export function ControlClient({
 
           {/* Connection badge */}
           <div className="flex items-center gap-1.5 shrink-0">
-            {pendingCount > 0 ? (
+            {!audioPrimed && (isCountdown || state.raceStatus === "running") ? (
+              <span className="flex items-center gap-1 rounded-full bg-neutral-700/60 border border-neutral-600 px-2 py-0.5 text-xs text-neutral-400">
+                tap to enable audio
+              </span>
+            ) : pendingCount > 0 ? (
               <span className="flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 text-xs text-amber-300">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
                 {pendingCount} pending
@@ -585,7 +800,7 @@ export function ControlClient({
       <main className="flex-1 max-w-xl mx-auto w-full px-3 py-4 flex flex-col gap-4">
 
         {/* ── DRAFT: pre-start ── */}
-        {state.raceStatus === "draft" && (
+        {state.raceStatus === "draft" && !isCountdown && (
           <>
             <div className="rounded-xl bg-neutral-900 border border-neutral-800 p-5">
               <p className="text-sm text-neutral-400 mb-1">Entrants ({state.entries.length})</p>
@@ -618,13 +833,81 @@ export function ControlClient({
             )}
 
             <button
-              onClick={handleStartRace}
-              disabled={starting || state.entries.length === 0}
-              className="w-full rounded-2xl bg-green-500 hover:bg-green-400 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-black font-bold text-2xl py-6 transition-all select-none"
+              onClick={handleStartCountdown}
+              disabled={countdownStarting || state.entries.length === 0}
+              className="w-full rounded-2xl bg-[#0a1b3d] hover:bg-[#0d2450] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-2xl py-6 transition-all select-none border border-blue-900"
               style={{ minHeight: 80 }}
             >
-              {starting ? "Starting…" : "START RACE"}
+              {countdownStarting ? "Starting…" : "START COUNTDOWN"}
             </button>
+
+            <button
+              onClick={handleStartImmediately}
+              disabled={state.entries.length === 0}
+              className="w-full rounded-xl bg-neutral-800 hover:bg-neutral-700 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-neutral-400 hover:text-white font-medium text-sm py-3 transition-all select-none"
+            >
+              Start race immediately (no countdown)
+            </button>
+          </>
+        )}
+
+        {/* ── COUNTDOWN ── */}
+        {state.raceStatus === "draft" && isCountdown && (
+          <>
+            {/* Big countdown display */}
+            <div className="flex flex-col items-center justify-center pt-6 pb-4">
+              <p className="text-xs text-neutral-500 uppercase tracking-widest mb-2">
+                Race starts in
+              </p>
+              <div
+                className={`font-mono font-black tabular-nums transition-colors duration-500 ${countdownColorClass()} ${
+                  state.countdownMs <= 10000 ? "animate-pulse" : ""
+                }`}
+                style={{ fontSize: "clamp(4rem, 20vw, 8rem)", lineHeight: 1 }}
+              >
+                {formatCountdown(state.countdownMs)}
+              </div>
+
+              {/* Signal timeline */}
+              <div className="mt-8 w-full max-w-xs">
+                <CountdownTimeline countdownMs={state.countdownMs} />
+              </div>
+            </div>
+
+            {/* Entrant list */}
+            <div className="rounded-xl bg-neutral-900 border border-neutral-800 p-4">
+              <p className="text-xs text-neutral-500 mb-2">
+                {state.entries.length} entrant{state.entries.length !== 1 ? "s" : ""}
+              </p>
+              <ul className="flex flex-col gap-1">
+                {state.entries.map((e) => (
+                  <li key={e.id} className="flex items-center justify-between text-sm py-1 border-b border-neutral-800 last:border-0">
+                    <span className="font-medium text-white">{e.racerName}</span>
+                    <span className="text-neutral-500">{e.sailNumber} · {e.className}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Abandon — hold to confirm */}
+            <div className="mt-auto pt-2">
+              <div className="relative overflow-hidden rounded-xl">
+                {/* Progress fill */}
+                <div
+                  className="absolute inset-0 bg-red-900/60 transition-none rounded-xl"
+                  style={{ width: `${abandonProgress}%` }}
+                />
+                <button
+                  onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); handleAbandonStart(); }}
+                  onPointerUp={handleAbandonEnd}
+                  onPointerLeave={handleAbandonEnd}
+                  onPointerCancel={handleAbandonEnd}
+                  className="relative z-10 w-full rounded-xl border border-red-900 bg-transparent text-red-500 hover:text-red-400 font-medium text-sm py-3 transition-colors select-none"
+                >
+                  {holdingAbandon ? "Release to cancel…" : "Hold to abandon countdown"}
+                </button>
+              </div>
+            </div>
           </>
         )}
 
@@ -715,6 +998,65 @@ export function ControlClient({
   );
 }
 
+// ─── Countdown Timeline ───────────────────────────────────────────────────────
+
+interface TimelineProps {
+  countdownMs: number;
+}
+
+const MARKS = [
+  { label: "T−5:00", ms: 5 * 60 * 1000 },
+  { label: "T−1:00", ms: 60 * 1000 },
+  { label: "T−0 GO", ms: 0 },
+];
+
+function CountdownTimeline({ countdownMs }: TimelineProps) {
+  const progress = 1 - countdownMs / COUNTDOWN_DURATION_MS;
+
+  return (
+    <div className="w-full">
+      {/* Progress bar */}
+      <div className="relative h-1 bg-neutral-800 rounded-full mb-3">
+        <div
+          className="absolute inset-y-0 left-0 bg-white/30 rounded-full transition-all duration-200"
+          style={{ width: `${Math.min(100, progress * 100)}%` }}
+        />
+        {MARKS.map(({ ms }) => {
+          const pos = 1 - ms / COUNTDOWN_DURATION_MS;
+          return (
+            <div
+              key={ms}
+              className="absolute top-1/2 -translate-y-1/2 w-2 h-2 rounded-full border border-neutral-700 transition-colors duration-300"
+              style={{
+                left: `calc(${pos * 100}% - 4px)`,
+                background: countdownMs <= ms ? "white" : "rgb(38,38,38)",
+              }}
+            />
+          );
+        })}
+      </div>
+      {/* Labels */}
+      <div className="relative h-4">
+        {MARKS.map(({ label, ms }) => {
+          const pos = 1 - ms / COUNTDOWN_DURATION_MS;
+          const passed = countdownMs <= ms;
+          return (
+            <span
+              key={ms}
+              className={`absolute text-xs transition-colors duration-300 -translate-x-1/2 ${
+                passed ? "text-white" : "text-neutral-600"
+              }`}
+              style={{ left: `${pos * 100}%` }}
+            >
+              {label}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── Entry Card ───────────────────────────────────────────────────────────────
 
 interface EntryCardProps {
@@ -790,7 +1132,6 @@ function EntryCard({
           {entry.sailNumber} · {entry.className}
         </span>
 
-        {/* Lap progress / status */}
         {isDone ? (
           <span
             className={`mt-1 inline-block w-fit rounded-full px-2 py-0.5 text-xs font-bold ${
@@ -828,10 +1169,8 @@ function EntryCard({
       {/* ── Right: LAP button + menu ── */}
       {!isDone && (
         <div className="flex items-stretch shrink-0">
-          {/* LAP button with debounce ring */}
           <button
             onPointerDown={(ev) => {
-              // Prevent iOS long-press context menu on the button
               ev.currentTarget.releasePointerCapture(ev.pointerId);
             }}
             onClick={() => !isDebounced && onLap(entry.id)}
@@ -867,7 +1206,6 @@ function EntryCard({
             <span className="relative z-10">LAP</span>
           </button>
 
-          {/* Kebab menu */}
           <DropdownMenu onOpenChange={(open) => { if (!open) setConfirmUndo(false); }}>
             <DropdownMenuTrigger
               className="flex items-center justify-center bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-white transition-colors focus:outline-none"
@@ -881,7 +1219,6 @@ function EntryCard({
               </svg>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-neutral-900 border-neutral-700 text-white min-w-36">
-              {/* Status options */}
               {(["DNF", "RET", "DSQ", "OCS", "DNS", "DNC"] as const).map((s) => (
                 <DropdownMenuItem
                   key={s}
@@ -953,4 +1290,12 @@ function EntryCard({
       )}
     </div>
   );
+}
+
+// TypeScript: WakeLock types may not be in older lib.dom.d.ts
+interface WakeLock {
+  request(type: "screen"): Promise<WakeLockSentinel>;
+}
+interface WakeLockSentinel {
+  release(): Promise<void>;
 }

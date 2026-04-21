@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       boat_classes: {
@@ -76,33 +51,33 @@ export type Database = {
         Row: {
           archived: boolean
           class_id: string
-          colour: string | null
           created_at: string
+          hull_colour: string | null
           id: string
-          name: string | null
           notes: string | null
+          owner: string | null
           sail_number: string
           updated_at: string
         }
         Insert: {
           archived?: boolean
           class_id: string
-          colour?: string | null
           created_at?: string
+          hull_colour?: string | null
           id?: string
-          name?: string | null
           notes?: string | null
+          owner?: string | null
           sail_number: string
           updated_at?: string
         }
         Update: {
           archived?: boolean
           class_id?: string
-          colour?: string | null
           created_at?: string
+          hull_colour?: string | null
           id?: string
-          name?: string | null
           notes?: string | null
+          owner?: string | null
           sail_number?: string
           updated_at?: string
         }
@@ -116,232 +91,7 @@ export type Database = {
           },
         ]
       }
-      lap_times: {
-        Row: {
-          created_at: string
-          cumulative_elapsed_ms: number
-          id: string
-          lap_number: number
-          race_entry_id: string
-        }
-        Insert: {
-          created_at?: string
-          cumulative_elapsed_ms: number
-          id?: string
-          lap_number: number
-          race_entry_id: string
-        }
-        Update: {
-          created_at?: string
-          cumulative_elapsed_ms?: number
-          id?: string
-          lap_number?: number
-          race_entry_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "lap_times_race_entry_id_fkey"
-            columns: ["race_entry_id"]
-            isOneToOne: false
-            referencedRelation: "race_entries"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      personal_handicap_history: {
-        Row: {
-          created_at: string
-          id: string
-          py_delta_after: number
-          py_delta_before: number
-          race_id: string | null
-          racer_id: string
-          reason: string | null
-          season_id: string
-          trophy_award_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          py_delta_after: number
-          py_delta_before: number
-          race_id?: string | null
-          racer_id: string
-          reason?: string | null
-          season_id: string
-          trophy_award_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          py_delta_after?: number
-          py_delta_before?: number
-          race_id?: string | null
-          racer_id?: string
-          reason?: string | null
-          season_id?: string
-          trophy_award_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "personal_handicap_history_race_id_fkey"
-            columns: ["race_id"]
-            isOneToOne: false
-            referencedRelation: "races"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "personal_handicap_history_racer_id_fkey"
-            columns: ["racer_id"]
-            isOneToOne: false
-            referencedRelation: "racers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "personal_handicap_history_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "seasons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "personal_handicap_history_trophy_award_id_fkey"
-            columns: ["trophy_award_id"]
-            isOneToOne: false
-            referencedRelation: "trophy_awards"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      race_entries: {
-        Row: {
-          base_py_snapshot: number | null
-          boat_id: string
-          class_id_snapshot: string | null
-          corrected_ms: number | null
-          created_at: string
-          effective_py_snapshot: number | null
-          elapsed_ms: number | null
-          finish_time_ms: number | null
-          id: string
-          laps_to_sail: number | null
-          normalised_elapsed_ms: number | null
-          personal_py_delta_snapshot: number | null
-          position_class: number | null
-          position_overall: number | null
-          race_id: string
-          racer_id: string
-          status: Database["public"]["Enums"]["entry_status"]
-          updated_at: string
-        }
-        Insert: {
-          base_py_snapshot?: number | null
-          boat_id: string
-          class_id_snapshot?: string | null
-          corrected_ms?: number | null
-          created_at?: string
-          effective_py_snapshot?: number | null
-          elapsed_ms?: number | null
-          finish_time_ms?: number | null
-          id?: string
-          laps_to_sail?: number | null
-          normalised_elapsed_ms?: number | null
-          personal_py_delta_snapshot?: number | null
-          position_class?: number | null
-          position_overall?: number | null
-          race_id: string
-          racer_id: string
-          status?: Database["public"]["Enums"]["entry_status"]
-          updated_at?: string
-        }
-        Update: {
-          base_py_snapshot?: number | null
-          boat_id?: string
-          class_id_snapshot?: string | null
-          corrected_ms?: number | null
-          created_at?: string
-          effective_py_snapshot?: number | null
-          elapsed_ms?: number | null
-          finish_time_ms?: number | null
-          id?: string
-          laps_to_sail?: number | null
-          normalised_elapsed_ms?: number | null
-          personal_py_delta_snapshot?: number | null
-          position_class?: number | null
-          position_overall?: number | null
-          race_id?: string
-          racer_id?: string
-          status?: Database["public"]["Enums"]["entry_status"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "race_entries_boat_id_fkey"
-            columns: ["boat_id"]
-            isOneToOne: false
-            referencedRelation: "boats"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "race_entries_class_id_snapshot_fkey"
-            columns: ["class_id_snapshot"]
-            isOneToOne: false
-            referencedRelation: "boat_classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "race_entries_race_id_fkey"
-            columns: ["race_id"]
-            isOneToOne: false
-            referencedRelation: "races"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "race_entries_racer_id_fkey"
-            columns: ["racer_id"]
-            isOneToOne: false
-            referencedRelation: "racers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      race_trophies: {
-        Row: {
-          created_at: string
-          display_order: number
-          race_id: string
-          trophy_id: string
-        }
-        Insert: {
-          created_at?: string
-          display_order?: number
-          race_id: string
-          trophy_id: string
-        }
-        Update: {
-          created_at?: string
-          display_order?: number
-          race_id?: string
-          trophy_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "race_trophies_race_id_fkey"
-            columns: ["race_id"]
-            isOneToOne: false
-            referencedRelation: "races"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "race_trophies_trophy_id_fkey"
-            columns: ["trophy_id"]
-            isOneToOne: false
-            referencedRelation: "trophies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      racers: {
+      helms: {
         Row: {
           archived: boolean
           created_at: string
@@ -385,8 +135,270 @@ export type Database = {
           },
         ]
       }
+      lap_times: {
+        Row: {
+          created_at: string
+          cumulative_elapsed_ms: number
+          id: string
+          lap_number: number
+          race_entry_id: string
+        }
+        Insert: {
+          created_at?: string
+          cumulative_elapsed_ms: number
+          id?: string
+          lap_number: number
+          race_entry_id: string
+        }
+        Update: {
+          created_at?: string
+          cumulative_elapsed_ms?: number
+          id?: string
+          lap_number?: number
+          race_entry_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lap_times_race_entry_id_fkey"
+            columns: ["race_entry_id"]
+            isOneToOne: false
+            referencedRelation: "race_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personal_handicap_history: {
+        Row: {
+          created_at: string
+          helm_id: string
+          id: string
+          py_delta_after: number
+          py_delta_before: number
+          race_id: string | null
+          reason: string | null
+          season_id: string
+          trophy_award_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          helm_id: string
+          id?: string
+          py_delta_after: number
+          py_delta_before: number
+          race_id?: string | null
+          reason?: string | null
+          season_id: string
+          trophy_award_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          helm_id?: string
+          id?: string
+          py_delta_after?: number
+          py_delta_before?: number
+          race_id?: string | null
+          reason?: string | null
+          season_id?: string
+          trophy_award_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_handicap_history_race_id_fkey"
+            columns: ["race_id"]
+            isOneToOne: false
+            referencedRelation: "races"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_handicap_history_racer_id_fkey"
+            columns: ["helm_id"]
+            isOneToOne: false
+            referencedRelation: "helms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_handicap_history_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personal_handicap_history_trophy_award_id_fkey"
+            columns: ["trophy_award_id"]
+            isOneToOne: false
+            referencedRelation: "trophy_awards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      race_audit_log: {
+        Row: {
+          changed_at: string
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          race_id: string
+        }
+        Insert: {
+          changed_at?: string
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          race_id: string
+        }
+        Update: {
+          changed_at?: string
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          race_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "race_audit_log_race_id_fkey"
+            columns: ["race_id"]
+            isOneToOne: false
+            referencedRelation: "races"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      race_entries: {
+        Row: {
+          base_py_snapshot: number | null
+          boat_id: string
+          class_id_snapshot: string | null
+          corrected_ms: number | null
+          created_at: string
+          effective_py_snapshot: number | null
+          elapsed_ms: number | null
+          finish_time_ms: number | null
+          helm_id: string
+          id: string
+          laps_to_sail: number | null
+          normalised_elapsed_ms: number | null
+          personal_py_delta_snapshot: number | null
+          position_class: number | null
+          position_overall: number | null
+          race_id: string
+          status: Database["public"]["Enums"]["entry_status"]
+          updated_at: string
+        }
+        Insert: {
+          base_py_snapshot?: number | null
+          boat_id: string
+          class_id_snapshot?: string | null
+          corrected_ms?: number | null
+          created_at?: string
+          effective_py_snapshot?: number | null
+          elapsed_ms?: number | null
+          finish_time_ms?: number | null
+          helm_id: string
+          id?: string
+          laps_to_sail?: number | null
+          normalised_elapsed_ms?: number | null
+          personal_py_delta_snapshot?: number | null
+          position_class?: number | null
+          position_overall?: number | null
+          race_id: string
+          status?: Database["public"]["Enums"]["entry_status"]
+          updated_at?: string
+        }
+        Update: {
+          base_py_snapshot?: number | null
+          boat_id?: string
+          class_id_snapshot?: string | null
+          corrected_ms?: number | null
+          created_at?: string
+          effective_py_snapshot?: number | null
+          elapsed_ms?: number | null
+          finish_time_ms?: number | null
+          helm_id?: string
+          id?: string
+          laps_to_sail?: number | null
+          normalised_elapsed_ms?: number | null
+          personal_py_delta_snapshot?: number | null
+          position_class?: number | null
+          position_overall?: number | null
+          race_id?: string
+          status?: Database["public"]["Enums"]["entry_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "race_entries_boat_id_fkey"
+            columns: ["boat_id"]
+            isOneToOne: false
+            referencedRelation: "boats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_entries_class_id_snapshot_fkey"
+            columns: ["class_id_snapshot"]
+            isOneToOne: false
+            referencedRelation: "boat_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_entries_race_id_fkey"
+            columns: ["race_id"]
+            isOneToOne: false
+            referencedRelation: "races"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_entries_racer_id_fkey"
+            columns: ["helm_id"]
+            isOneToOne: false
+            referencedRelation: "helms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      race_trophies: {
+        Row: {
+          created_at: string
+          display_order: number
+          race_id: string
+          trophy_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          race_id: string
+          trophy_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          race_id?: string
+          trophy_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "race_trophies_race_id_fkey"
+            columns: ["race_id"]
+            isOneToOne: false
+            referencedRelation: "races"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "race_trophies_trophy_id_fkey"
+            columns: ["trophy_id"]
+            isOneToOne: false
+            referencedRelation: "trophies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       races: {
         Row: {
+          countdown_abandoned_at: string | null
+          countdown_started_at: string | null
           course_description: string | null
           created_at: string
           day_offset: number
@@ -403,6 +415,8 @@ export type Database = {
           use_base_py_only: boolean
         }
         Insert: {
+          countdown_abandoned_at?: string | null
+          countdown_started_at?: string | null
           course_description?: string | null
           created_at?: string
           day_offset: number
@@ -419,6 +433,8 @@ export type Database = {
           use_base_py_only?: boolean
         }
         Update: {
+          countdown_abandoned_at?: string | null
+          countdown_started_at?: string | null
           course_description?: string | null
           created_at?: string
           day_offset?: number
@@ -508,30 +524,30 @@ export type Database = {
         Row: {
           awarded_at: string
           created_at: string
+          helm_id: string
           id: string
           notes: string | null
           race_id: string
-          racer_id: string
           trophy_id: string
           updated_at: string
         }
         Insert: {
           awarded_at?: string
           created_at?: string
+          helm_id: string
           id?: string
           notes?: string | null
           race_id: string
-          racer_id: string
           trophy_id: string
           updated_at?: string
         }
         Update: {
           awarded_at?: string
           created_at?: string
+          helm_id?: string
           id?: string
           notes?: string | null
           race_id?: string
-          racer_id?: string
           trophy_id?: string
           updated_at?: string
         }
@@ -545,9 +561,9 @@ export type Database = {
           },
           {
             foreignKeyName: "trophy_awards_racer_id_fkey"
-            columns: ["racer_id"]
+            columns: ["helm_id"]
             isOneToOne: false
-            referencedRelation: "racers"
+            referencedRelation: "helms"
             referencedColumns: ["id"]
           },
           {
@@ -565,7 +581,7 @@ export type Database = {
     }
     Functions: {
       apply_trophy_award: {
-        Args: { p_race_id: string; p_racer_id: string; p_trophy_id: string }
+        Args: { p_helm_id: string; p_race_id: string; p_trophy_id: string }
         Returns: string
       }
       create_season_from_template: { Args: { p_year: number }; Returns: string }
@@ -709,9 +725,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       entry_status: ["racing", "FIN", "DNF", "DNS", "DSQ", "RET", "OCS", "DNC"],

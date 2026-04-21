@@ -1,19 +1,19 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Link from "next/link";
 import { Providers } from "@/components/providers";
-import { LockStatus } from "@/components/lock-status";
-import { Logo } from "@/components/branding/logo";
+import { SiteHeader } from "@/components/layout/site-header";
 import "./globals.css";
 
+// Use --font-sans / --font-mono directly so Tailwind's font-sans / font-mono
+// utilities resolve to Geist at runtime without any intermediate variable.
 const geistSans = Geist({
-  variable: "--font-geist-sans",
+  variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+  variable: "--font-mono",
   subsets: ["latin"],
   display: "swap",
 });
@@ -59,36 +59,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full`}
+      className={`${geistSans.variable} ${geistMono.variable} font-sans h-full`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col antialiased">
         <Providers>
-          <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white"
-            style={{ paddingTop: "env(safe-area-inset-top)" }}
-          >
-            <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-              <Link href="/" className="flex items-center gap-2.5 min-w-0">
-                <Logo size="sm" priority />
-                <span className="hidden md:block text-sm font-semibold text-neutral-900 hover:text-neutral-600 transition-colors truncate">
-                  Nefyn Sailing Club
-                </span>
-              </Link>
-
-              <nav className="flex items-center gap-4">
-                <Link
-                  href="/trophies"
-                  className="text-sm text-neutral-500 transition-colors hover:text-neutral-900"
-                >
-                  Trophies
-                </Link>
-                <LockStatus />
-              </nav>
-            </div>
-          </header>
+          <SiteHeader />
 
           <div className="flex-1">{children}</div>
 
-          <footer className="no-print border-t border-neutral-100 bg-white mt-auto"
+          <footer
+            className="no-print border-t border-neutral-100 bg-white mt-auto"
             style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
           >
             <div className="mx-auto max-w-4xl px-4 py-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-xs text-neutral-400">

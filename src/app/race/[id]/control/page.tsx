@@ -20,13 +20,14 @@ export default async function RaceControlPage({ params }: PageProps) {
   const { data: race } = await supabase
     .from("races")
     .select(
-      `id, name, day_offset, start_time, status, started_at, reference_laps,
-       use_base_py_only, is_pursuit, notes,
+      `id, name, day_offset, start_time, status, started_at,
+       countdown_started_at, countdown_abandoned_at,
+       reference_laps, use_base_py_only, is_pursuit, notes,
        seasons(year, start_date),
        race_trophies(display_order, trophies(name)),
        race_entries(
          id, laps_to_sail, status, finish_time_ms,
-         racers(display_name, full_name),
+         helms(display_name, full_name),
          boats(sail_number, boat_classes(name)),
          lap_times(lap_number, cumulative_elapsed_ms)
        )`
@@ -56,7 +57,7 @@ export default async function RaceControlPage({ params }: PageProps) {
     laps_to_sail: number | null;
     status: string;
     finish_time_ms: number | null;
-    racers: { display_name: string; full_name: string } | null;
+    helms: { display_name: string; full_name: string } | null;
     boats: {
       sail_number: string;
       boat_classes: { name: string } | null;
@@ -66,7 +67,7 @@ export default async function RaceControlPage({ params }: PageProps) {
 
   const initialEntries: InitialEntry[] = rawEntries.map((e) => ({
     id: e.id,
-    racerName: e.racers?.display_name ?? e.racers?.full_name ?? "?",
+    racerName: e.helms?.display_name ?? e.helms?.full_name ?? "?",
     sailNumber: e.boats?.sail_number ?? "?",
     className: e.boats?.boat_classes?.name ?? "?",
     lapsToSail: e.laps_to_sail ?? 3,
@@ -81,6 +82,14 @@ export default async function RaceControlPage({ params }: PageProps) {
     .sort((a, b) => a.display_order - b.display_order)
     .map((rt) => (rt.trophies as { name: string } | null)?.name ?? "?");
 
+  // Active countdown: countdown_started_at set, not abandoned, race still draft
+  const activeCountdownStartedAt =
+    race.status === "draft" &&
+    race.countdown_started_at &&
+    !race.countdown_abandoned_at
+      ? race.countdown_started_at
+      : null;
+
   return (
     <ControlClient
       raceId={raceId}
@@ -93,6 +102,7 @@ export default async function RaceControlPage({ params }: PageProps) {
       referenceLaps={race.reference_laps}
       initialStatus={race.status}
       initialStartedAt={race.started_at}
+      initialCountdownStartedAt={activeCountdownStartedAt}
       initialEntries={initialEntries}
       seasonYear={season?.year ?? null}
     />

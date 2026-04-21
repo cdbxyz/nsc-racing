@@ -16,7 +16,7 @@ export async function addEntry(
   const supabase = createServiceClient();
 
   const race_id = formData.get("race_id") as string;
-  const racer_id = formData.get("racer_id") as string;
+  const helm_id = formData.get("helm_id") as string;
   const boat_override = (formData.get("boat_override") as string) || null;
 
   // Check race is still in draft
@@ -34,7 +34,7 @@ export async function addEntry(
   // Compute snapshot (throws on missing boat/class)
   let snapshot;
   try {
-    snapshot = await computeEntrySnapshot(racer_id, boat_override);
+    snapshot = await computeEntrySnapshot(helm_id, boat_override);
   } catch (e) {
     return { error: (e as Error).message };
   }
@@ -43,7 +43,7 @@ export async function addEntry(
 
   const { error } = await supabase.from("race_entries").insert({
     race_id,
-    racer_id,
+    helm_id,
     boat_id: snapshot.boat_id,
     class_id_snapshot: snapshot.class_id_snapshot,
     base_py_snapshot: snapshot.base_py_snapshot,
@@ -55,7 +55,7 @@ export async function addEntry(
 
   if (error) {
     if (error.code === "23505") {
-      return { error: "This racer is already entered in this race." };
+      return { error: "This helm is already entered in this race." };
     }
     return { error: error.message };
   }
@@ -116,7 +116,7 @@ export async function updateEntry(
   // Re-snapshot if boat changed
   const { data: currentEntry } = await supabase
     .from("race_entries")
-    .select("boat_id, racer_id")
+    .select("boat_id, helm_id")
     .eq("id", entry_id)
     .single();
 
@@ -125,7 +125,7 @@ export async function updateEntry(
   if (boat_id && boat_id !== currentEntry.boat_id) {
     let snapshot;
     try {
-      snapshot = await computeEntrySnapshot(currentEntry.racer_id, boat_id);
+      snapshot = await computeEntrySnapshot(currentEntry.helm_id, boat_id);
     } catch (e) {
       return { error: (e as Error).message };
     }

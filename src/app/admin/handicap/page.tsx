@@ -27,7 +27,7 @@ export default async function HandicapPage() {
 
   // All non-archived racers with default boat info
   const { data: racersRaw } = await supabase
-    .from("racers")
+    .from("helms")
     .select(
       `id, full_name, display_name, personal_py_delta,
        boats:default_boat_id(sail_number, base_py, boat_classes(name))`
@@ -64,19 +64,19 @@ export default async function HandicapPage() {
     seasonRaceIds.length > 0
       ? await supabase
           .from("trophy_awards")
-          .select("racer_id, trophies(accumulator_group)")
+          .select("helm_id, trophies(accumulator_group)")
           .in("race_id", seasonRaceIds)
       : { data: [] };
 
   type AwardRow = {
-    racer_id: string;
+    helm_id: string;
     trophies: { accumulator_group: string | null } | null;
   };
   const awards = (awardsRaw ?? []) as AwardRow[];
 
   const trophyCountMap = new Map<string, number>();
   for (const a of awards.filter((a) => a.trophies?.accumulator_group == null)) {
-    trophyCountMap.set(a.racer_id, (trophyCountMap.get(a.racer_id) ?? 0) + 1);
+    trophyCountMap.set(a.helm_id, (trophyCountMap.get(a.helm_id) ?? 0) + 1);
   }
 
   // Handicap history per racer
@@ -86,17 +86,17 @@ export default async function HandicapPage() {
       ? await supabase
           .from("personal_handicap_history")
           .select(
-            `id, racer_id, created_at, py_delta_before, py_delta_after, reason,
+            `id, helm_id, created_at, py_delta_before, py_delta_after, reason,
              trophy_awards(trophies(name)),
              races(name, day_offset, seasons(start_date))`
           )
-          .in("racer_id", racerIds)
+          .in("helm_id", racerIds)
           .order("created_at", { ascending: false })
       : { data: [] };
 
   type RawHistory = {
     id: string;
-    racer_id: string;
+    helm_id: string;
     created_at: string;
     py_delta_before: number;
     py_delta_after: number;
@@ -126,9 +126,9 @@ export default async function HandicapPage() {
           ? raceDate(h.races.seasons.start_date, h.races.day_offset)
           : null,
     };
-    const list = historyByRacer.get(h.racer_id) ?? [];
+    const list = historyByRacer.get(h.helm_id) ?? [];
     list.push(row);
-    historyByRacer.set(h.racer_id, list);
+    historyByRacer.set(h.helm_id, list);
   }
 
   const racerRows: RacerRow[] = racers.map((r) => ({

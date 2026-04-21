@@ -15,7 +15,7 @@ import { updateEntry, removeEntry } from "./actions";
 interface Boat {
   id: string;
   sail_number: string;
-  name: string | null;
+  owner: string | null;
 }
 
 interface EntryRowProps {
@@ -26,8 +26,8 @@ interface EntryRowProps {
     base_py_snapshot: number | null;
     personal_py_delta_snapshot: number | null;
     effective_py_snapshot: number | null;
-    racers: { full_name: string; display_name: string } | null;
-    boats: { sail_number: string; name: string | null; boat_classes: { name: string } | null } | null;
+    helms: { full_name: string; display_name: string } | null;
+    boats: { sail_number: string; owner: string | null; boat_classes: { name: string } | null } | null;
   };
   allBoats: Boat[];
   locked: boolean;
@@ -48,11 +48,12 @@ export function EntryRow({ entry, allBoats, locked }: EntryRowProps) {
     <>
       <tr className="border-b border-neutral-100">
         <td className="py-2 pr-3 font-medium text-neutral-900">
-          {entry.racers?.display_name ?? "?"}
+          {entry.helms?.display_name ?? "?"}
         </td>
         <td className="py-2 pr-3 text-neutral-600">
-          {entry.boats?.sail_number ?? "—"}
-          {entry.boats?.name ? ` (${entry.boats.name})` : ""}
+          {entry.boats
+            ? `${entry.boats.sail_number}${entry.boats.owner ? ` (${entry.boats.owner})` : ""}`
+            : "—"}
         </td>
         <td className="py-2 pr-3 text-neutral-500 text-sm">
           {entry.boats?.boat_classes?.name ?? "—"}
@@ -95,7 +96,7 @@ export function EntryRow({ entry, allBoats, locked }: EntryRowProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Edit entry — {entry.racers?.display_name}
+              Edit entry — {entry.helms?.display_name}
             </DialogTitle>
           </DialogHeader>
           <form key={entry.id} action={formAction} className="flex flex-col gap-4">
@@ -112,7 +113,7 @@ export function EntryRow({ entry, allBoats, locked }: EntryRowProps) {
               >
                 {allBoats.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.sail_number}{b.name ? ` – ${b.name}` : ""}
+                    {b.sail_number}{b.owner ? ` – ${b.owner}` : ""}
                   </option>
                 ))}
               </select>
