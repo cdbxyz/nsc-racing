@@ -2,35 +2,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="flex flex-col min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto max-w-4xl px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Logo placeholder */}
-            <div className="h-10 w-10 rounded-full bg-neutral-800 flex items-center justify-center text-white text-xs font-bold select-none">
-              NSC
-            </div>
-            <div>
-              <p className="text-xs text-neutral-500 leading-none">
-                Nefyn Sailing Club
-              </p>
-              <p className="text-sm font-semibold text-neutral-900 leading-tight">
-                Fortnight Racing
-              </p>
-            </div>
-          </div>
-          <nav className="flex items-center gap-4 text-sm text-neutral-600">
-            <Link
-              href="/results"
-              className="hover:text-neutral-900 transition-colors"
-            >
-              Results
-            </Link>
-          </nav>
-        </div>
-      </header>
-
+    <main className="flex flex-col">
       {/* Hero */}
       <section className="mx-auto max-w-4xl w-full px-4 py-12 sm:py-20">
         <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900 tracking-tight">
