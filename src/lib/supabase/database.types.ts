@@ -397,6 +397,7 @@ export type Database = {
           reference_laps: number | null
           season_id: string
           start_time: string
+          started_at: string | null
           status: Database["public"]["Enums"]["race_status"]
           updated_at: string
           use_base_py_only: boolean
@@ -412,6 +413,7 @@ export type Database = {
           reference_laps?: number | null
           season_id: string
           start_time?: string
+          started_at?: string | null
           status?: Database["public"]["Enums"]["race_status"]
           updated_at?: string
           use_base_py_only?: boolean
@@ -427,6 +429,7 @@ export type Database = {
           reference_laps?: number | null
           season_id?: string
           start_time?: string
+          started_at?: string | null
           status?: Database["public"]["Enums"]["race_status"]
           updated_at?: string
           use_base_py_only?: boolean
